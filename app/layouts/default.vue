@@ -5,11 +5,13 @@ import type { NavigationMenuItem } from '@nuxt/ui'
 const navigationMenu = ref<NavigationMenuItem[]>([
   {
     label: '首页',
-    to: '/'
+    to: '/',
+    icon: 'lucide:house'
   },
   {
     label: '博客列表',
-    to: '/blogs'
+    to: '/blogs',
+    icon: 'lucide:file-text'
   },
   {
     label: '关于',

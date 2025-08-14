@@ -7,11 +7,12 @@ export async function login(data: {
   /** 密码 */
   password: string
 }): Promise<User.LoginResponse> {
+  const { $api } = useNuxtApp()
   const body = {
     account: String(data.account),
     password: String(data.password)
   }
-  const response = await $fetch<ApiResponse<User.LoginResponse>>('/user/login', {
+  const response = await $api<ApiResponse<User.LoginResponse>>('/user/login', {
     method: 'POST',
     body
   })

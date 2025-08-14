@@ -1,7 +1,7 @@
-/** 博客相关类型定义 */
-declare namespace Blog {
-  /** 博客信息 */
-  interface BlogInfo {
+/** 文章相关类型定义 */
+declare namespace Article {
+  /** 文章信息 */
+  interface ArticleInfo {
     /** 文章唯一标识符 */
     id: number
     /** 文章标题 */
@@ -14,8 +14,8 @@ declare namespace Blog {
     postTime: string
   }
 
-  /** 博客详情 */
-  interface BlogDetail extends BlogInfo {
+  /** 文章详情 */
+  interface ArticleDetail extends ArticleInfo {
     /** 文章正文内容 */
     content: string
     /** 文章所属分区ID */
@@ -26,6 +26,6 @@ declare namespace Blog {
     comUseTags: number[]
   }
 
-  /** 博客列表 */
-  type BlogList = BlogInfo[]
+  /** 文章列表 */
+  type ArticleList = ArticleInfo[]
 }

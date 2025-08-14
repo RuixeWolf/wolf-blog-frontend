@@ -6,7 +6,7 @@ const props = defineProps<{
 }>()
 
 /** 博客列表 */
-const { data: blogs } = useFetch<ApiListResponse<Blog.BlogInfo>>('/api/blogs', {
+const { data: blogs } = useFetch<ApiListResponse<Article.ArticleInfo>>('/api/blogs', {
   method: 'POST',
   body: {
     authorId: props.authorId

@@ -2,13 +2,13 @@
 /** Vue Route */
 const route = useRoute()
 
-/** 博客 ID */
-const blogId = route.params.blogId as string
+/** 文章 ID */
+const articleId = route.params.articleId as string
 </script>
 
 <template>
   <div>
-    <h1>博客详情 {{ blogId }}</h1>
+    <h1>文章详情 {{ articleId }}</h1>
   </div>
 </template>
 

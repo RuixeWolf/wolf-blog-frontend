@@ -24,15 +24,30 @@ declare namespace User {
     registerDate: string
   }
 
+  /** 登录请求 */
+  type LoginRequest = Pick<UserInfo, 'account' | 'password'>
+
   /** 登录响应 */
-  interface LoginResponse {
+  type LoginResponse = {
     /** 访问令牌 */
     token: string
   }
 
+  /** 注册请求 */
+  type RegisterRequest = Pick<UserInfo, 'username' | 'email'> & {
+    /** 密码 */
+    password: string
+  }
+
   /** 注册响应 */
-  interface RegisterResponse extends Pick<UserInfo, 'id' | 'username' | 'account' | 'email'> {
+  type RegisterResponse = Pick<UserInfo, 'id' | 'username' | 'account' | 'email'> & {
     /** 访问令牌 */
     token: string
   }
+
+  /** 全量更新用户信息请求 */
+  type PutUserRequest = Pick<
+    UserInfo,
+    'nickname' | 'avatar' | 'personalStatus' | 'phone' | 'email' | 'birth'
+  >
 }

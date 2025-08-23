@@ -5,10 +5,9 @@ export class ApiError extends Error {
   /** 响应数据 */
   public readonly data: unknown
 
-  constructor(code: string, message: string, data?: unknown) {
-    super(message)
-    this.name = 'ApiError'
-    this.code = code
-    this.data = data
+  constructor(response: { code: string; message: string; data?: unknown }) {
+    super(response.message)
+    this.code = response.code
+    this.data = response.data
   }
 }

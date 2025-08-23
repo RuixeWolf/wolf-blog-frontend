@@ -22,7 +22,7 @@ declare interface ApiListRequest {
 }
 
 /** Api 响应数据 - 分页列表 */
-declare type ApiListResponse<T = null> = ApiResponse<{
+declare interface ApiListData<T = null> {
   /** 当前页码 */
   currentPage: number
   /** 总页数 */
@@ -31,4 +31,4 @@ declare type ApiListResponse<T = null> = ApiResponse<{
   totalRow: number
   /** 数据列表 */
   records: T[]
-}>
+}

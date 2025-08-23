@@ -1,7 +1,9 @@
 <script lang="ts" setup></script>
 
 <template>
-  <div>博客列表</div>
+  <div>
+    <ArticleList />
+  </div>
 </template>
 
 <style></style>

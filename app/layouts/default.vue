@@ -1,22 +1,50 @@
 <script lang="ts" setup>
 import type { NavigationMenuItem } from '@nuxt/ui'
 
+/** 当前登录用户 */
+const currentUser = useCurrentUser()
+
 /** 导航菜单配置 */
-const navigationMenu = ref<NavigationMenuItem[]>([
-  {
-    label: '首页',
-    to: '/',
-    icon: 'lucide:house'
-  },
-  {
-    label: '博客列表',
-    to: '/blogs',
-    icon: 'lucide:file-text'
-  },
-  {
-    label: '关于',
-    to: '/about'
-  }
+const navigationMenu = computed<NavigationMenuItem[][]>(() => [
+  [
+    {
+      label: '首页',
+      to: '/',
+      icon: 'lucide:house'
+    },
+    {
+      label: '博客文章',
+      to: '/articles',
+      icon: 'lucide:file-text'
+    },
+    {
+      label: '关于',
+      to: '/about'
+    }
+  ],
+  currentUser.isLoggedIn
+    ? [
+        {
+          label: currentUser.userInfo?.account || '用户',
+          avatar: {
+            src: currentUser.userInfo?.avatar,
+            alt: '用户头像',
+            icon: 'lucide:user'
+          }
+        }
+      ]
+    : [
+        {
+          label: '登录',
+          to: '/user/login',
+          icon: 'lucide:log-in'
+        },
+        {
+          label: '注册',
+          to: '/user/register',
+          icon: 'lucide:user-plus'
+        }
+      ]
 ])
 </script>
 

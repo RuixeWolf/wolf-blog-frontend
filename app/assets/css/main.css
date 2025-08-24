@@ -2,5 +2,5 @@
 @import '@nuxt/ui';
 
 :root {
-  --ui-header-height: 4rem;
+  --ui-header-height: 5rem;
 }

@@ -5,7 +5,6 @@ export async function login(data: User.LoginRequest): Promise<User.LoginResponse
     account: String(data.account),
     password: String(data.password)
   }
-  console.log('用户登录请求体:', body)
   const response = await $api<ApiResponse<User.LoginResponse>>('/user/login', {
     method: 'POST',
     body

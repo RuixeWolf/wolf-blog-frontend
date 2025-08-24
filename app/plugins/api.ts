@@ -2,14 +2,12 @@ export default defineNuxtPlugin((nuxtApp) => {
   /** Nuxt 运行时配置 */
   const runtimeConfig = useRuntimeConfig()
 
-  /** 登录 Token Cookie */
-  const authToken = useCookie('auth_token')
-
   /** API 请求实例 */
   const api = $fetch.create({
     baseURL: runtimeConfig.public.apiBase,
-    onRequest({ options }) {
+    async onRequest({ options }) {
       // 从 Cookie 获取 Token 并添加至请求头
+      const authToken = useCookie('auth_token')
       if (authToken.value) options.headers.set('Authorization', authToken.value)
     },
     async onResponseError({ response }) {

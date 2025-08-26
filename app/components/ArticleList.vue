@@ -1,18 +1,21 @@
 <script lang="ts" setup>
 /** 组件参数 */
 const props = defineProps<{
-  /** 作者 ID */
-  authorId?: string
+  query?: Article.QueryArticleListParams
 }>()
 
 /** 文章列表 */
-const { data: articleList } = useApi<ApiListData<Article.ArticleInfo>>('/article/query', {
+const { data: articleList, refresh } = useApi<ApiListData<Article.ArticleInfo>>('/article/query', {
   method: 'POST',
   headers: { 'Content-Type': 'application/nullable+json' },
-  body: {
-    authorId: props.authorId
-  }
+  body: props.query ? toRaw(props.query) : {}
 })
+
+watch(
+  () => props.query,
+  () => refresh(),
+  { deep: true }
+)
 </script>
 
 <template>

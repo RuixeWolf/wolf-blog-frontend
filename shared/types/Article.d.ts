@@ -28,4 +28,15 @@ declare namespace Article {
 
   /** 文章列表 */
   type ArticleList = ArticleInfo[]
+
+  /** 查询文章列表参数 */
+  type QueryArticleListParams = Partial<
+    ApiListRequest &
+      Pick<ArticleDetail, 'id' | 'title' | 'authorId' | 'partitionId'> & {
+        /** 发布时间开始 */
+        postStart?: string
+        /** 发布时间结束 */
+        postEnd?: string
+      }
+  >
 }

@@ -133,18 +133,18 @@ async function handleSubmit(event: FormSubmitEvent<LoginForm>): Promise<void> {
             :disabled="isLoading"
             @submit="handleSubmit"
           >
-            <UFormField label="账号" name="account" required>
+            <UFormField label="账号" name="account" required class="px-4">
               <UInput
                 v-model="loginForm.account"
                 class="w-full"
-                placeholder="请输入用户名或邮箱"
+                placeholder="请输入账号或邮箱"
                 size="lg"
                 icon="i-lucide-user"
                 autocomplete="username"
               />
             </UFormField>
 
-            <UFormField label="密码" name="password" required>
+            <UFormField label="密码" name="password" required class="px-4">
               <UInput
                 v-model="loginForm.password"
                 class="w-full"
@@ -180,12 +180,7 @@ async function handleSubmit(event: FormSubmitEvent<LoginForm>): Promise<void> {
             <!-- 注册链接 -->
             <div class="text-center">
               <span class="text-gray-600 dark:text-gray-400">还没有账户？</span>
-              <UButton
-                variant="link"
-                color="primary"
-                to="/user/register"
-                class="ml-1 font-semibold"
-              >
+              <UButton variant="link" color="primary" to="/user/register" class="font-semibold">
                 立即注册
               </UButton>
             </div>

@@ -20,16 +20,16 @@
     "nuxt": "^4.0.3",
     "pinia": "^3.0.3",
     "typescript": "^5.9.2",
-    "vue": "^3.5.19",
+    "vue": "^3.5.20",
     "vue-router": "^4.5.1",
-    "zod": "^4.1.1"
+    "zod": "^4.1.3"
   },
   "devDependencies": {
     "@ianvs/prettier-plugin-sort-imports": "^4.6.2",
-    "@iconify-json/lucide": "^1.2.63",
+    "@iconify-json/lucide": "^1.2.64",
     "prettier": "^3.6.2",
     "prettier-plugin-tailwindcss": "^0.6.14",
-    "sass-embedded": "^1.90.0",
+    "sass-embedded": "^1.91.0",
     "vue-tsc": "^3.0.6"
   }
 }

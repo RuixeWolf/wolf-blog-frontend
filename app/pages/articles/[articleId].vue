@@ -29,7 +29,7 @@ const formatDate = (dateString: string) => {
 
 /** 返回文章列表 */
 const goBack = () => {
-  navigateTo('/articles')
+  navigateTo('/')
 }
 
 /** 重新加载数据 */

@@ -16,8 +16,10 @@ export default defineNuxtPlugin((nuxtApp) => {
         console.log('Error API response:', response)
       }
 
-      // 只有在 401 时跳转登录页
-      if (response.status === 401) {
+      const data = response._data as ApiResponse<null> | undefined
+
+      // Token 过期时跳转登录页
+      if (data && ['UN_LOGIN', 'AUTH_FAILED'].includes(data?.code)) {
         await nuxtApp.runWithContext(() => navigateTo('/user/login'))
       }
 

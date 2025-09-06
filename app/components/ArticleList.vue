@@ -1,7 +1,8 @@
 <script lang="ts" setup>
 /** 组件参数 */
 const props = defineProps<{
-  query?: Article.QueryArticleListParams
+  /** 文章列表查询参数 */
+  query?: Article.ArticleListQuery
 }>()
 
 /** 文章列表 */
@@ -20,7 +21,6 @@ watch(
 
 <template>
   <div>
-    <h1 class="mb-4 text-2xl font-bold">文章列表</h1>
     <ul>
       <li v-for="article in articleList?.records" :key="article.id">
         <NuxtLink :to="`/articles/${article.id}`">{{ article.title }}</NuxtLink>

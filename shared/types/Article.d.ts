@@ -12,6 +12,12 @@ declare namespace Article {
     authorId: number
     /** 文章发布时间 */
     postTime: string
+    /**
+     * 可见性
+     * - `0` - 公开
+     * - `1` - 私密
+     */
+    visibility: number
   }
 
   /** 文章详情 */
@@ -30,7 +36,7 @@ declare namespace Article {
   type ArticleList = ArticleInfo[]
 
   /** 查询文章列表参数 */
-  type QueryArticleListParams = Partial<
+  type ArticleListQuery = Partial<
     ApiListRequest &
       Pick<ArticleDetail, 'id' | 'title' | 'authorId' | 'partitionId'> & {
         /** 发布时间开始 */
@@ -39,4 +45,34 @@ declare namespace Article {
         postEnd?: string
       }
   >
+
+  /** 创建文章请求数据 */
+  type CreateArticleRequest = Omit<ArticleDetail, 'id' | 'authorId' | 'postTime'>
+
+  /** 增量更新文章请求数据 */
+  type PatchArticleRequest = Pick<ArticleDetail, 'id'> &
+    Partial<Omit<ArticleDetail, 'id' | 'authorId' | 'postTime'>>
+
+  /** 文章评论 */
+  interface Comment {
+    /** 评论 ID */
+    id: number
+    /** 评论用户 ID */
+    userId: number
+    /** 回复的评论 ID */
+    replyId: number | null
+    /** 评论内容 */
+    content: string
+    /** 评论发布时间 */
+    commentTime: string
+  }
+
+  /** 评论列表 */
+  type CommentList = Comment[]
+
+  /** 获取文章评论查询参数 */
+  type CommentListQuery = {
+    /** 文章 ID */
+    articleId: number
+  } & Partial<Pick<Comment, 'userId' | 'replyId'>>
 }

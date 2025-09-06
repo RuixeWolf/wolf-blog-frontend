@@ -20,7 +20,10 @@ export default defineNuxtPlugin((nuxtApp) => {
 
       // Token 过期时跳转登录页
       if (data && ['UN_LOGIN', 'AUTH_FAILED'].includes(data?.code)) {
-        await nuxtApp.runWithContext(() => navigateTo('/user/login'))
+        await nuxtApp.runWithContext(() => {
+          const currentUser = useCurrentUser()
+          currentUser.clearUserInfo()
+        })
       }
 
       // 对于业务错误（4xx, 5xx），不抛出异常，而是返回标准的 ApiResponse 格式

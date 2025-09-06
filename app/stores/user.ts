@@ -22,10 +22,15 @@ export const useCurrentUser = defineStore('current-user', () => {
     await refreshUserInfo()
   }
 
-  /** 用户退出登录 */
-  async function logout() {
+  /** 清空用户登录信息 */
+  function clearUserInfo() {
     authToken.value = null
     userInfo.value = null
+  }
+
+  /** 用户退出登录 */
+  async function logout() {
+    clearUserInfo()
   }
 
   /** 刷新当前登录用户信息 */
@@ -68,6 +73,7 @@ export const useCurrentUser = defineStore('current-user', () => {
     isLoggedIn,
     login,
     logout,
+    clearUserInfo,
     userInfo,
     refreshUserInfo,
     initializeUser

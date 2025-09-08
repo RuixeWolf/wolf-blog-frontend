@@ -75,4 +75,12 @@ declare namespace Article {
     /** 文章 ID */
     articleId: number
   } & Partial<Pick<Comment, 'userId' | 'replyId'>>
+
+  /** 评论删除请求数据 */
+  type DeleteCommentRequest = {
+    /** 评论 ID */
+    commentId: number
+    /** 文章 ID */
+    articleId: number
+  }
 }

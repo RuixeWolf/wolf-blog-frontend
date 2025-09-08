@@ -13,7 +13,7 @@ export async function createArticle(
   data: Article.CreateArticleRequest
 ): Promise<Article.ArticleDetail> {
   const { $api } = useNuxtApp()
-  const body = {
+  const body = filterUndefinedFields({
     title: String(data.title),
     primary: String(data.primary),
     content: String(data.content),
@@ -21,7 +21,7 @@ export async function createArticle(
     tags: Array.isArray(data.tags) ? data.tags.map(String) : [],
     comUseTags: Array.isArray(data.comUseTags) ? data.comUseTags.map(Number) : [],
     visibility: Number(data.visibility) as 0 | 1
-  }
+  })
   const response = await $api<ApiResponse<Article.ArticleDetail>>('/article', {
     method: 'POST',
     body
@@ -35,29 +35,18 @@ export async function patchArticle(
   data: Article.PatchArticleRequest
 ): Promise<Article.ArticleDetail> {
   const { $api } = useNuxtApp()
-  const body = {
+  const body = filterUndefinedFields({
     id: Number(data.id),
-    title: data.title === undefined ? undefined : String(data.title),
-    primary:
-      data.primary === undefined ? undefined : data.primary === null ? null : String(data.primary),
-    content:
-      data.content === undefined ? undefined : data.content === null ? null : String(data.content),
-    partitionId:
-      data.partitionId === undefined
-        ? undefined
-        : data.partitionId === null
-          ? null
-          : Number(data.partitionId),
-    tags:
-      data.tags === undefined ? undefined : Array.isArray(data.tags) ? data.tags.map(String) : [],
-    comUseTags:
-      data.comUseTags === undefined
-        ? undefined
-        : Array.isArray(data.comUseTags)
-          ? data.comUseTags.map(Number)
-          : [],
-    visibility: data.visibility === undefined ? undefined : (Number(data.visibility) as 0 | 1)
-  }
+    title: optionalField(data.title, String),
+    primary: optionalField(data.primary, String),
+    content: optionalField(data.content, String),
+    partitionId: optionalField(data.partitionId, Number),
+    tags: optionalField(data.tags, (tags) => (Array.isArray(tags) ? tags.map(String) : [])),
+    comUseTags: optionalField(data.comUseTags, (comUseTags) =>
+      Array.isArray(comUseTags) ? comUseTags.map(Number) : []
+    ),
+    visibility: optionalField(data.visibility, Number) as 0 | 1
+  })
   const response = await $api<ApiResponse<Article.ArticleDetail>>('/article', {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/nullable+json' },

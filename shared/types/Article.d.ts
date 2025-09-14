@@ -27,9 +27,9 @@ declare namespace Article {
     /** 文章所属分区ID */
     partitionId: number
     /** 文章标签列表 */
-    tags: string[]
+    tags: string[] | null
     /** 常用标签 ID 列表 */
-    comUseTags: number[]
+    comUseTags: number[] | null
   }
 
   /** 文章列表 */
@@ -47,11 +47,11 @@ declare namespace Article {
   >
 
   /** 创建文章请求数据 */
-  type CreateArticleRequest = Omit<ArticleDetail, 'id' | 'authorId' | 'postTime'>
+  type CreateArticleRequest = Pick<ArticleDetail, 'authorId' | 'title' | 'primary' | 'content'> &
+    Partial<Pick<ArticleDetail, 'tags' | 'comUseTags' | 'visibility' | 'partitionId'>>
 
   /** 增量更新文章请求数据 */
-  type PatchArticleRequest = Pick<ArticleDetail, 'id'> &
-    Partial<Omit<ArticleDetail, 'id' | 'authorId' | 'postTime'>>
+  type PatchArticleRequest = Pick<ArticleDetail, 'id'> & Partial<CreateArticleRequest>
 
   /** 文章评论 */
   interface Comment {

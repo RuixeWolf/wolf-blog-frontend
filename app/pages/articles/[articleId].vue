@@ -13,6 +13,7 @@ const isDark = useDark()
 /** 获取文章详情 */
 const {
   data: article,
+  status,
   success,
   code,
   message,
@@ -92,7 +93,7 @@ useHead(() => ({
     </div>
 
     <!-- 错误状态 -->
-    <div v-else-if="!success" class="py-12 text-center">
+    <div v-else-if="status != 'pending' && !success" class="py-12 text-center">
       <UCard>
         <template #header>
           <div class="flex items-center gap-3 text-red-500">
@@ -142,7 +143,7 @@ useHead(() => ({
             </div>
 
             <!-- 标签 -->
-            <div v-if="article.tags.length > 0" class="flex flex-wrap gap-2">
+            <div v-if="article.tags && article.tags.length > 0" class="flex flex-wrap gap-2">
               <UBadge
                 v-for="tag in article.tags"
                 :key="tag"
@@ -155,7 +156,10 @@ useHead(() => ({
             </div>
 
             <!-- 常用标签 -->
-            <div v-if="article.comUseTags.length > 0" class="flex flex-wrap gap-2">
+            <div
+              v-if="article.comUseTags && article.comUseTags.length > 0"
+              class="flex flex-wrap gap-2"
+            >
               <UChip v-for="tagId in article.comUseTags" :key="tagId" size="sm" color="neutral">
                 <UBadge variant="outline" color="secondary" size="xs"> #{{ tagId }} </UBadge>
               </UChip>

@@ -73,10 +73,10 @@ async function handleLogout(): Promise<void> {
             />
             <div class="min-w-0 flex-1">
               <div class="truncate text-sm font-medium text-gray-900 dark:text-white">
-                {{ currentUser.userInfo?.username }} ({{ currentUser.userInfo?.account }})
+                {{ currentUser.userInfo?.username }}
               </div>
               <div class="truncate text-xs text-gray-500 dark:text-gray-400">
-                {{ currentUser.userInfo?.email }}
+                {{ currentUser.userInfo?.account }}
               </div>
             </div>
           </div>

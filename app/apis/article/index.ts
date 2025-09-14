@@ -17,7 +17,7 @@ export async function createArticle(
     title: String(data.title),
     primary: String(data.primary),
     content: String(data.content),
-    partitionId: Number(data.partitionId),
+    partitionId: optionalField(data.partitionId, Number),
     tags: Array.isArray(data.tags) ? data.tags.map(String) : [],
     comUseTags: Array.isArray(data.comUseTags) ? data.comUseTags.map(Number) : [],
     visibility: Number(data.visibility) as 0 | 1

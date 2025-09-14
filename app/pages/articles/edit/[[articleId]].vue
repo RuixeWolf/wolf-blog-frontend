@@ -7,6 +7,9 @@ import { useDark } from '@vueuse/core'
 /** Vue Route */
 const route = useRoute()
 
+/** 当前登录用户 */
+const currentUser = useCurrentUser()
+
 /** 文章 ID */
 const articleId = (route.params.articleId as string) || ''
 
@@ -17,11 +20,12 @@ const isDark = useDark()
 const isEditing = computed(() => articleId && articleId !== 'new')
 
 /** 表单状态 */
-const formData = reactive({
+const formData = reactive<
+  Omit<Article.CreateArticleRequest & Article.PatchArticleRequest, 'id' | 'authorId' | 'postTime'>
+>({
   title: '',
   primary: '',
   content: '',
-  partitionId: 1,
   tags: [] as string[],
   comUseTags: [] as number[],
   visibility: 0
@@ -52,8 +56,8 @@ watch(
         primary: article.primary,
         content: article.content,
         partitionId: article.partitionId,
-        tags: [...article.tags],
-        comUseTags: [...article.comUseTags],
+        tags: [...(article.tags || [])],
+        comUseTags: [...(article.comUseTags || [])],
         visibility: article.visibility
       })
     }
@@ -61,33 +65,21 @@ watch(
   { immediate: true }
 )
 
-/** 标签输入相关 */
-const newTag = ref('')
-function addTag() {
-  if (newTag.value.trim() && !formData.tags.includes(newTag.value.trim())) {
-    formData.tags.push(newTag.value.trim())
-    newTag.value = ''
-  }
-}
-function removeTag(index: number) {
-  formData.tags.splice(index, 1)
-}
+/** 标签输入相关（已移除，改用 UInputTags） */
 
 /** 常用标签输入相关 */
-const newComUseTag = ref<number | ''>('')
-function addComUseTag() {
-  const tagId = Number(newComUseTag.value)
-  if (tagId && !formData.comUseTags.includes(tagId)) {
-    formData.comUseTags.push(tagId)
-    newComUseTag.value = ''
+const comUseTagsAsStrings = computed({
+  get: () => formData.comUseTags?.map(String) || [],
+  set: (value: string[]) => {
+    formData.comUseTags = value.map(Number).filter((num) => !isNaN(num) && num > 0)
   }
-}
-function removeComUseTag(index: number) {
-  formData.comUseTags.splice(index, 1)
-}
+})
 
 /** 保存文章 */
 async function saveArticle() {
+  // 用户未登录
+  if (currentUser.userInfo?.id == null) return
+
   if (!formData.title.trim() || !formData.content.trim()) {
     // 显示错误提示
     return
@@ -104,7 +96,10 @@ async function saveArticle() {
       })
     } else {
       // 创建文章
-      const newArticle = await createArticle(formData)
+      const newArticle = await createArticle({
+        authorId: currentUser.userInfo.id,
+        ...formData
+      })
       // 创建成功后跳转到文章详情页
       await navigateTo(`/articles/${newArticle.id}`)
       return
@@ -118,6 +113,39 @@ async function saveArticle() {
   } finally {
     saving.value = false
   }
+}
+
+/** 导入 Markdown 文件 */
+const fileInputRef = ref<HTMLInputElement>()
+
+function triggerFileSelect() {
+  fileInputRef.value?.click()
+}
+
+function handleFileSelect(event: Event) {
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
+
+  if (!file) return
+
+  // 读取文件内容
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    const content = e.target?.result as string
+    if (!content) return
+    // 导入内容到表单
+    formData.content = content
+    // 尝试从文件内容中提取标题（如果内容以 # 开头）
+    const lines = content.split('\n')
+    const firstLine = lines[0]?.trim()
+    if (firstLine && firstLine.startsWith('#') && !formData.title.trim()) {
+      formData.title = firstLine.replace(/^#+\s*/, '').trim()
+    }
+  }
+  reader.readAsText(file)
+
+  // 清空 input 值，以便重复选择同一文件
+  target.value = ''
 }
 
 /** 返回上一页 */
@@ -136,14 +164,20 @@ useHead(() => ({
 </script>
 
 <template>
-  <div class="container mx-auto py-8">
+  <div class="max-w-8xl mx-auto px-4 py-6">
     <!-- 返回按钮和页面标题 -->
-    <div class="mb-6 flex items-center justify-between">
-      <div class="flex items-center gap-4">
-        <UButton icon="i-lucide-arrow-left" variant="ghost" color="neutral" @click="goBack">
+    <div class="mb-4 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <UButton
+          icon="i-lucide-arrow-left"
+          variant="ghost"
+          color="neutral"
+          size="sm"
+          @click="goBack"
+        >
           返回
         </UButton>
-        <h1 class="text-2xl font-bold">
+        <h1 class="text-xl font-bold">
           {{ isEditing ? '编辑文章' : '创建文章' }}
         </h1>
       </div>
@@ -159,10 +193,10 @@ useHead(() => ({
     </div>
 
     <!-- 加载状态 -->
-    <div v-if="loadingArticle" class="space-y-6">
-      <USkeleton class="h-12 w-full" />
-      <USkeleton class="h-20 w-full" />
-      <USkeleton class="h-96 w-full" />
+    <div v-if="loadingArticle" class="space-y-4">
+      <USkeleton class="h-10 w-full" />
+      <USkeleton class="h-16 w-full" />
+      <USkeleton class="h-80 w-full" />
     </div>
 
     <!-- 加载失败 -->
@@ -185,156 +219,114 @@ useHead(() => ({
     </div>
 
     <!-- 编辑表单 -->
-    <div v-else class="space-y-6">
-      <!-- 基本信息 -->
+    <div v-else class="space-y-4">
+      <!-- 基本信息和标签管理（合并） -->
       <UCard>
         <template #header>
-          <h2 class="text-lg font-semibold">基本信息</h2>
+          <h2 class="text-lg font-semibold">文章信息</h2>
         </template>
 
-        <div class="space-y-6">
+        <div class="space-y-4">
           <!-- 文章标题 -->
           <div>
-            <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
               文章标题 <span class="text-red-500">*</span>
             </label>
-            <UInput v-model="formData.title" placeholder="请输入文章标题" size="lg" />
+            <UInput v-model="formData.title" class="w-full" placeholder="请输入文章标题" />
           </div>
 
           <!-- 文章摘要 -->
           <div>
-            <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
               文章摘要
             </label>
-            <UTextarea v-model="formData.primary" placeholder="请输入文章摘要" :rows="3" />
+            <UTextarea
+              v-model="formData.primary"
+              class="w-full"
+              placeholder="请输入文章摘要"
+              :rows="2"
+            />
           </div>
 
-          <!-- 分区和可见性 -->
-          <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <!-- 分区和可见性（一行排列） -->
+          <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <!-- 分区 ID -->
             <div>
-              <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
                 分区 ID
               </label>
               <UInput
                 v-model.number="formData.partitionId"
+                class="w-full"
                 type="number"
                 placeholder="分区 ID"
                 :min="1"
+                size="sm"
               />
             </div>
 
+            <!-- 可见性 -->
             <div>
-              <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
                 可见性
               </label>
               <USelect
                 v-model="formData.visibility"
+                class="w-full"
                 :items="ARTICLE_VISIBILITY_OPTIONS"
                 option-attribute="label"
                 value-attribute="value"
-              />
-            </div>
-          </div>
-        </div>
-      </UCard>
-
-      <!-- 标签管理 -->
-      <UCard>
-        <template #header>
-          <h2 class="text-lg font-semibold">标签管理</h2>
-        </template>
-
-        <div class="space-y-6">
-          <!-- 普通标签 -->
-          <div>
-            <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-              标签
-            </label>
-
-            <!-- 标签输入 -->
-            <div class="mb-3 flex gap-2">
-              <UInput
-                v-model="newTag"
-                placeholder="添加标签"
-                class="flex-1"
-                @keyup.enter="addTag"
-              />
-              <UButton
-                icon="i-lucide-plus"
-                variant="outline"
-                :disabled="!newTag.trim()"
-                @click="addTag"
-              >
-                添加
-              </UButton>
-            </div>
-
-            <!-- 标签列表 -->
-            <div v-if="formData.tags.length > 0" class="flex flex-wrap gap-2">
-              <UBadge
-                v-for="(tag, index) in formData.tags"
-                :key="index"
-                variant="soft"
-                color="primary"
-                class="flex items-center gap-1"
-              >
-                {{ tag }}
-                <UButton
-                  icon="i-lucide-x"
-                  size="xs"
-                  variant="ghost"
-                  color="primary"
-                  @click="removeTag(index)"
-                />
-              </UBadge>
-            </div>
-          </div>
-
-          <!-- 常用标签 -->
-          <div>
-            <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-              常用标签 ID
-            </label>
-
-            <!-- 常用标签输入 -->
-            <div class="mb-3 flex gap-2">
-              <UInput
-                v-model.number="newComUseTag"
-                type="number"
-                placeholder="添加常用标签 ID"
-                class="flex-1"
-                :min="1"
-                @keyup.enter="addComUseTag"
-              />
-              <UButton
-                icon="i-lucide-plus"
-                variant="outline"
-                :disabled="!newComUseTag"
-                @click="addComUseTag"
-              >
-                添加
-              </UButton>
-            </div>
-
-            <!-- 常用标签列表 -->
-            <div v-if="formData.comUseTags.length > 0" class="flex flex-wrap gap-2">
-              <UChip
-                v-for="(tagId, index) in formData.comUseTags"
-                :key="index"
                 size="sm"
-                color="neutral"
-                class="flex items-center gap-1"
-              >
-                <UBadge variant="outline" color="secondary" size="xs"> #{{ tagId }} </UBadge>
-                <UButton
-                  icon="i-lucide-x"
-                  size="xs"
-                  variant="ghost"
-                  color="neutral"
-                  @click="removeComUseTag(index)"
-                />
-              </UChip>
+              />
             </div>
+          </div>
+
+          <!-- 标签管理 -->
+          <div class="space-y-3">
+            <!-- 普通标签 -->
+            <div>
+              <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                标签
+              </label>
+              <UInputTags
+                v-model="formData.tags"
+                class="w-full"
+                placeholder="输入标签后按回车添加..."
+                icon="i-lucide-tag"
+                size="sm"
+                :max-length="20"
+              />
+            </div>
+
+            <!-- 常用标签管理（可折叠） -->
+            <UCollapsible>
+              <UButton
+                variant="ghost"
+                color="neutral"
+                size="sm"
+                icon="i-lucide-settings"
+                trailing-icon="i-lucide-chevron-down"
+                class="text-xs"
+              >
+                常用标签管理
+              </UButton>
+
+              <template #content>
+                <div class="mt-2 space-y-2 rounded border border-gray-200 p-3 dark:border-gray-700">
+                  <label class="block text-xs font-medium text-gray-600 dark:text-gray-400">
+                    输入数字 ID (例如: 1, 2, 3)
+                  </label>
+                  <UInputTags
+                    v-model="comUseTagsAsStrings"
+                    placeholder="输入标签 ID 后按回车添加..."
+                    icon="i-lucide-hash"
+                    size="sm"
+                    :max-length="5"
+                    type="number"
+                  />
+                </div>
+              </template>
+            </UCollapsible>
           </div>
         </div>
       </UCard>
@@ -342,7 +334,19 @@ useHead(() => ({
       <!-- 文章内容 -->
       <UCard>
         <template #header>
-          <h2 class="text-lg font-semibold">文章内容 <span class="text-red-500">*</span></h2>
+          <div class="flex items-center justify-between">
+            <h2 class="text-lg font-semibold">文章内容 <span class="text-red-500">*</span></h2>
+            <div class="flex items-center gap-2">
+              <UButton
+                icon="i-lucide-file-text"
+                variant="outline"
+                color="neutral"
+                @click="triggerFileSelect"
+              >
+                导入 MD 文件
+              </UButton>
+            </div>
+          </div>
         </template>
 
         <div class="min-h-[500px]">
@@ -387,9 +391,14 @@ useHead(() => ({
         </div>
       </UCard>
     </div>
+
+    <!-- 隐藏的文件输入 -->
+    <input
+      ref="fileInputRef"
+      type="file"
+      accept=".md,.markdown,.txt"
+      style="display: none"
+      @change="handleFileSelect"
+    />
   </div>
 </template>
-
-<style scoped>
-/* 自定义样式可以在这里添加 */
-</style>

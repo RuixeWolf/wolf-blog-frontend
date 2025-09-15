@@ -2,7 +2,12 @@
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
-  modules: ['@nuxt/eslint', '@nuxt/ui'],
-  css: ['~/assets/css/main.css'],
+  modules: ['@nuxt/eslint', '@nuxt/ui', '@pinia/nuxt', '@vueuse/nuxt'],
+  css: ['~/assets/css/main.css', 'md-editor-v3/lib/style.css'],
+  runtimeConfig: {
+    public: {
+      apiBase: ''
+    }
+  },
   ui: { fonts: false }
 })

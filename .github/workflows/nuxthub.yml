@@ -32,4 +32,4 @@ jobs:
       - name: Build & Deploy to NuxtHub
         uses: nuxt-hub/action@v2
         with:
-          project-key: wolf-blog-front-6oih
+          project-key: wolf-blog-front-9c5w

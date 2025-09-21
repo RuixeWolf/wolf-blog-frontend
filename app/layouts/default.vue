@@ -1,7 +1,7 @@
 <script lang="ts" setup></script>
 
 <template>
-  <div class="min-h-screen min-w-screen">
+  <div class="min-h-screen w-full">
     <!-- 导航菜单页头 -->
     <NavigationMenuHeader />
 

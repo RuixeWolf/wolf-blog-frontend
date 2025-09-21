@@ -53,6 +53,14 @@ declare namespace Article {
   /** 增量更新文章请求数据 */
   type PatchArticleRequest = Pick<ArticleDetail, 'id'> & Partial<CreateArticleRequest>
 
+  /** 文章标签 */
+  interface Tag {
+    /** 标签 ID */
+    id: number
+    /** 标签名称 */
+    name: string
+  }
+
   /** 文章评论 */
   interface Comment {
     /** 评论 ID */

@@ -11,6 +11,7 @@ const {
   status,
   pending,
   success,
+  code,
   message,
   refresh: refreshArticleList
 } = useApi<ApiListData<Article.ArticleInfo>>('/article/query', {
@@ -334,8 +335,8 @@ useHead({
           icon="i-lucide-alert-circle"
           color="error"
           variant="subtle"
-          :title="message"
-          :description="`请稍后重试或联系管理员`"
+          :title="`加载文章列表失败 (错误码: ${code})`"
+          :description="message"
         />
       </div>
 

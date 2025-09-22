@@ -65,3 +65,8 @@ export async function deleteArticle(articleId: Article.ArticleDetail['id']): Pro
   if (!response.success) throw new ApiError(response)
   return response.data
 }
+
+// 导出文章评论相关 API
+export * from './comment'
+// 导出文章标签相关 API
+export * from './tag'

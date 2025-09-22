@@ -61,6 +61,18 @@ declare namespace Article {
     name: string
   }
 
+  /** 创建标签请求数据 */
+  type CreateTagRequest = Pick<Tag, 'name'>
+
+  /** 全量更新标签请求数据 */
+  type PutTagRequest = Pick<Tag, 'id' | 'name'>
+
+  /** 批量删除标签请求数据 */
+  type DeleteTagsRequest = {
+    /** 标签 ID 列表 */
+    ids: Array<Tag['id']>
+  }
+
   /** 文章评论 */
   interface Comment {
     /** 评论 ID */
@@ -84,7 +96,11 @@ declare namespace Article {
     articleId: number
   } & Partial<Pick<Comment, 'userId' | 'replyId'>>
 
-  /** 评论删除请求数据 */
+  /** 创建评论请求数据 */
+  type CreateCommentRequest = Pick<Comment, 'articleId' | 'content'> &
+    Partial<Pick<Comment, 'replyId'>>
+
+  /** 删除评论请求数据 */
   type DeleteCommentRequest = {
     /** 评论 ID */
     commentId: number

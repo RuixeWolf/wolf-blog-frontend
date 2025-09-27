@@ -8,7 +8,7 @@
  */
 export async function getTags(): Promise<Article.Tag[]> {
   const { $api } = useNuxtApp()
-  const response = await $api<ApiResponse<Article.Tag[]>>('/article/tag')
+  const response = await $api<ApiResponse<Article.Tag[]>>('/tag')
   if (!response.success) throw new ApiError(response)
   return response.data
 }
@@ -17,7 +17,7 @@ export async function getTags(): Promise<Article.Tag[]> {
 export async function createTag(data: Article.CreateTagRequest): Promise<Article.Tag> {
   const { $api } = useNuxtApp()
   const body = { name: String(data.name) }
-  const response = await $api<ApiResponse<Article.Tag>>('/article/tag', {
+  const response = await $api<ApiResponse<Article.Tag>>('/tag', {
     method: 'POST',
     body
   })
@@ -29,7 +29,7 @@ export async function createTag(data: Article.CreateTagRequest): Promise<Article
 export async function putTag(data: Article.PutTagRequest): Promise<Article.Tag> {
   const { $api } = useNuxtApp()
   const body = { id: Number(data.id), name: String(data.name) }
-  const response = await $api<ApiResponse<Article.Tag>>('/article/tag', {
+  const response = await $api<ApiResponse<Article.Tag>>('/tag', {
     method: 'PUT',
     body
   })
@@ -41,7 +41,7 @@ export async function putTag(data: Article.PutTagRequest): Promise<Article.Tag> 
 export async function deleteTags(data: Article.DeleteTagsRequest): Promise<void> {
   const { $api } = useNuxtApp()
   const body = { ids: Array.isArray(data.ids) ? data.ids.map((id) => Number(id)) : [] }
-  const response = await $api<ApiResponse<void>>('/article/tag', {
+  const response = await $api<ApiResponse<void>>('/tag', {
     method: 'DELETE',
     body
   })

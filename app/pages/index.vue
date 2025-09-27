@@ -1,4 +1,8 @@
 <script lang="ts" setup>
+/** 当前登录用户 */
+const currentUser = useCurrentUser()
+const { isLoggedIn } = storeToRefs(currentUser)
+
 /** 文章列表查询参数 */
 const query = reactive<Article.ArticleListQuery>({
   pageNumber: 1,
@@ -143,6 +147,12 @@ useHead({
   title: 'Wolf Blog - 文章列表',
   meta: [{ name: 'description', content: '浏览所有精彩文章，发现有趣的内容和观点' }]
 })
+
+/** 跳转至新建文章页面 */
+function goToNewArticle() {
+  if (isLoggedIn.value) navigateTo('/articles/edit')
+  else navigateTo('/user/login')
+}
 </script>
 
 <template>
@@ -155,7 +165,7 @@ useHead({
       </div>
 
       <!-- 新建文章按钮 -->
-      <UButton icon="i-lucide-plus" color="primary" variant="solid" to="/articles/edit">
+      <UButton icon="i-lucide-plus" color="primary" variant="solid" @click="goToNewArticle">
         写文章
       </UButton>
     </div>
@@ -413,7 +423,9 @@ useHead({
         <p class="mb-6 text-center text-gray-500 dark:text-gray-400">
           还没有发布任何文章，快来创建第一篇文章吧！
         </p>
-        <UButton icon="i-lucide-plus" color="primary" to="/articles/edit"> 写第一篇文章 </UButton>
+        <UButton icon="i-lucide-plus" color="primary" @click="goToNewArticle">
+          写第一篇文章
+        </UButton>
       </div>
     </UCard>
 

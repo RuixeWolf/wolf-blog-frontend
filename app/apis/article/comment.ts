@@ -3,14 +3,14 @@
 /** 获取文章评论列表 */
 export async function getArticleComments(
   query: Article.CommentListQuery
-): Promise<Article.CommentList> {
+): Promise<ApiListData<Article.Comment>> {
   const { $api } = useNuxtApp()
   const body = filterUndefinedFields({
     articleId: Number(query.articleId),
     userId: optionalField(query.userId, Number),
     replyId: optionalField(query.replyId, Number)
   })
-  const response = await $api<ApiResponse<Article.CommentList>>('/article/comment', {
+  const response = await $api<ApiResponse<ApiListData<Article.Comment>>>('/article/comment', {
     method: 'POST',
     headers: { 'Content-Type': 'application/nullable+json' },
     body

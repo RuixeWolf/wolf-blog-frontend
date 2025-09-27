@@ -353,7 +353,6 @@ async function saveArticle() {
       await navigateTo(`/articles/${newArticle.id}`)
       return
     }
-    refreshArticle()
     // 编辑成功后跳转到文章详情页
     await navigateTo(`/articles/${articleId}`)
   } catch (error) {

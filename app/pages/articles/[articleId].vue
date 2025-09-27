@@ -1,27 +1,137 @@
 <script lang="ts" setup>
 import { MdCatalog, MdPreview } from 'md-editor-v3'
+import { storeToRefs } from 'pinia'
+import { computed, ref, watch } from 'vue'
+import { getArticleSelfLikeStatus, likeArticle, unlikeArticle } from '@/apis/article/like'
 
-/** Vue Route */
 const route = useRoute()
+const toast = useToast()
+const colorMode = useColorMode()
 
-/** 文章 ID */
-const articleId = route.params.articleId as string
+/** 当前登录用户 */
+const currentUser = useCurrentUser()
+const { isLoggedIn, userInfo } = storeToRefs(currentUser)
 
-/** 黑暗模式 */
-const isDark = useDark()
+const articleId = computed(() => Number(route.params.articleId))
+const loginRedirectPath = computed(() => {
+  const redirect = encodeURIComponent(route.fullPath)
+  return `/user/login?redirect=${redirect}`
+})
 
-/** 获取文章详情 */
+const commentSectionRef = ref<{ scrollToComments: () => void } | null>(null)
+const commentCount = ref(0)
+
 const {
   data: article,
   status,
+  pending,
   success,
   code,
   message,
-  pending,
   refresh
-} = useApi<Article.ArticleDetail>(() => `/article/${articleId}`)
+} = useApi<Article.ArticleDetail>(() => `/article/${articleId.value}`, {
+  watch: [articleId]
+})
 
-/** 格式化发布时间 */
+const isDark = computed(() => colorMode.value === 'dark')
+
+const isLiked = ref(false)
+const likeStatusLoading = ref(false)
+const likeMutationLoading = ref(false)
+
+function redirectToLogin() {
+  navigateTo(loginRedirectPath.value)
+}
+
+function handleCommentCountUpdate(count: number) {
+  commentCount.value = count
+}
+
+function scrollToComments() {
+  if (!import.meta.client) return
+  commentSectionRef.value?.scrollToComments()
+}
+
+async function fetchLikeStatus() {
+  if (!import.meta.client) return
+  if (!isLoggedIn.value) {
+    isLiked.value = false
+    return
+  }
+
+  likeStatusLoading.value = true
+  try {
+    isLiked.value = await getArticleSelfLikeStatus(articleId.value)
+  } catch (error) {
+    console.error('获取点赞状态失败', error)
+    toast.add({
+      title: '点赞状态获取失败',
+      description: '稍后自动重试，请稍候再试',
+      color: 'warning'
+    })
+  } finally {
+    likeStatusLoading.value = false
+  }
+}
+
+if (import.meta.client) {
+  watch(
+    () => [isLoggedIn.value, articleId.value],
+    ([loggedIn]) => {
+      if (loggedIn) {
+        void fetchLikeStatus()
+      } else {
+        isLiked.value = false
+      }
+    },
+    { immediate: true }
+  )
+}
+
+async function handleToggleLike() {
+  if (!isLoggedIn.value) {
+    toast.add({
+      title: '请先登录',
+      description: '登录后才能点赞文章',
+      color: 'neutral'
+    })
+    redirectToLogin()
+    return
+  }
+
+  if (likeMutationLoading.value) return
+
+  likeMutationLoading.value = true
+  try {
+    if (isLiked.value) {
+      await unlikeArticle(articleId.value)
+      isLiked.value = false
+      toast.add({
+        title: '已取消点赞',
+        color: 'neutral'
+      })
+    } else {
+      await likeArticle(articleId.value)
+      isLiked.value = true
+      toast.add({
+        title: '点赞成功',
+        color: 'success'
+      })
+    }
+
+    await refresh()
+  } catch (error) {
+    console.error('更新点赞状态失败', error)
+    toast.add({
+      title: '操作失败',
+      description: '请稍后再试',
+      color: 'error'
+    })
+  } finally {
+    likeMutationLoading.value = false
+  }
+}
+
 function formatDate(dateString: string) {
   const date = new Date(dateString)
   return date.toLocaleDateString('zh-CN', {
@@ -33,17 +143,14 @@ function formatDate(dateString: string) {
   })
 }
 
-/** 返回文章列表 */
 function goBack() {
   navigateTo('/')
 }
 
-/** 重新加载数据 */
 function retry() {
   refresh()
 }
 
-/** 页面 meta 设置 */
 useHead(() => ({
   title: article.value?.title ? `${article.value.title} - Wolf Blog` : 'Wolf Blog',
   meta: [{ name: 'description', content: article.value?.primary || '文章详情页' }]
@@ -52,13 +159,12 @@ useHead(() => ({
 
 <template>
   <div class="container mx-auto py-8">
-    <!-- 返回按钮 -->
     <div class="mb-6 flex flex-row items-center justify-between">
       <UButton icon="i-lucide-arrow-left" variant="ghost" color="neutral" @click="goBack">
         返回文章列表
       </UButton>
-      <!-- 编辑按钮 -->
       <UButton
+        v-if="isLoggedIn && userInfo?.id === article?.authorId"
         icon="i-lucide-edit"
         variant="ghost"
         color="neutral"
@@ -68,22 +174,14 @@ useHead(() => ({
       </UButton>
     </div>
 
-    <!-- 加载状态 -->
     <div v-if="pending" class="space-y-6">
-      <!-- 标题骨架屏 -->
       <USkeleton class="h-12 w-full" />
-
-      <!-- 文章信息骨架屏 -->
       <div class="flex flex-wrap gap-4">
         <USkeleton class="h-6 w-32" />
         <USkeleton class="h-6 w-24" />
         <USkeleton class="h-6 w-20" />
       </div>
-
-      <!-- 摘要骨架屏 -->
       <USkeleton class="h-20 w-full" />
-
-      <!-- 内容骨架屏 -->
       <div class="space-y-3">
         <USkeleton class="h-4 w-full" />
         <USkeleton class="h-4 w-4/5" />
@@ -92,8 +190,7 @@ useHead(() => ({
       </div>
     </div>
 
-    <!-- 错误状态 -->
-    <div v-else-if="status != 'pending' && !success" class="py-12 text-center">
+    <div v-else-if="status !== 'pending' && !success" class="py-12 text-center">
       <UCard>
         <template #header>
           <div class="flex items-center gap-3 text-red-500">
@@ -110,40 +207,28 @@ useHead(() => ({
       </UCard>
     </div>
 
-    <!-- 文章内容 -->
     <div v-else-if="article" class="space-y-8">
-      <!-- 文章头部 -->
       <UCard>
         <template #header>
           <div class="space-y-4">
-            <!-- 文章标题 -->
             <h1 class="text-3xl leading-tight font-bold text-gray-900 dark:text-white">
               {{ article.title }}
             </h1>
-
-            <!-- 文章元信息 -->
             <div class="flex flex-wrap items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
-              <!-- 发布时间 -->
               <div class="flex items-center gap-2">
                 <UIcon name="i-lucide-calendar" class="h-4 w-4" />
                 <span>{{ formatDate(article.postTime) }}</span>
               </div>
-
-              <!-- 作者 -->
               <div class="flex items-center gap-2">
                 <UIcon name="i-lucide-user" class="h-4 w-4" />
                 <span>作者 ID: {{ article.authorId }}</span>
               </div>
-
-              <!-- 分区 -->
               <div class="flex items-center gap-2">
                 <UIcon name="i-lucide-folder" class="h-4 w-4" />
                 <span>分区 ID: {{ article.partitionId }}</span>
               </div>
             </div>
-
-            <!-- 标签 -->
-            <div v-if="article.tags && article.tags.length > 0" class="flex flex-wrap gap-2">
+            <div v-if="article.tags?.length" class="flex flex-wrap gap-2">
               <UBadge
                 v-for="tag in article.tags"
                 :key="tag"
@@ -154,20 +239,14 @@ useHead(() => ({
                 {{ tag }}
               </UBadge>
             </div>
-
-            <!-- 常用标签 -->
-            <div
-              v-if="article.comUseTags && article.comUseTags.length > 0"
-              class="flex flex-wrap gap-2"
-            >
+            <div v-if="article.comUseTags?.length" class="flex flex-wrap gap-2">
               <UChip v-for="tagId in article.comUseTags" :key="tagId" size="sm" color="neutral">
-                <UBadge variant="outline" color="secondary" size="xs"> #{{ tagId }} </UBadge>
+                <UBadge variant="outline" color="secondary" size="xs">#{{ tagId }}</UBadge>
               </UChip>
             </div>
           </div>
         </template>
 
-        <!-- 文章摘要 -->
         <div v-if="article.primary" class="dark:prose-invert max-w-none">
           <div class="mb-6 rounded-lg bg-gray-50 p-4 dark:bg-gray-800">
             <p class="leading-relaxed text-gray-700 dark:text-gray-300">
@@ -176,7 +255,6 @@ useHead(() => ({
           </div>
         </div>
 
-        <!-- 文章正文 -->
         <div class="w-full">
           <MdCatalog id="article-content" />
           <MdPreview
@@ -187,18 +265,39 @@ useHead(() => ({
         </div>
       </UCard>
 
-      <!-- 文章操作 -->
       <UCard>
         <div class="flex items-center justify-between">
           <div class="flex gap-4">
-            <UButton icon="i-lucide-heart" variant="outline" color="neutral">点赞</UButton>
+            <UButton
+              :icon="isLiked ? 'i-lucide-heart' : 'i-lucide-heart-off'"
+              :color="isLiked ? 'primary' : 'neutral'"
+              :variant="isLiked ? 'solid' : 'outline'"
+              :loading="likeStatusLoading || likeMutationLoading"
+              @click="handleToggleLike"
+            >
+              {{ isLiked ? '已点赞' : '点赞' }}
+            </UButton>
             <UButton icon="i-lucide-bookmark" variant="outline" color="neutral">收藏</UButton>
             <UButton icon="i-lucide-share-2" variant="outline" color="neutral">分享</UButton>
           </div>
-
-          <UButton icon="i-lucide-message-circle" variant="soft" color="primary">评论</UButton>
+          <UButton
+            icon="i-lucide-message-circle"
+            variant="soft"
+            color="primary"
+            @click="scrollToComments"
+          >
+            {{ commentCount > 0 ? `评论 (${commentCount})` : '评论' }}
+          </UButton>
         </div>
       </UCard>
+
+      <ArticleComments
+        ref="commentSectionRef"
+        :article-id="article.id"
+        :article-author-id="article.authorId"
+        :login-redirect-path="loginRedirectPath"
+        @update:count="handleCommentCountUpdate"
+      />
     </div>
   </div>
 </template>

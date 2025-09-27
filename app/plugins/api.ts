@@ -3,26 +3,12 @@ export default defineNuxtPlugin((nuxtApp) => {
   /** Nuxt 运行时配置 */
   const runtimeConfig = useRuntimeConfig()
 
-  /**
-   * 服务端可选的 TLS 校验开关（仅用于开发/受信环境）
-   * 当设置 `NUXT_DISABLE_TLS_VERIFY=1` 或 `NODE_TLS_REJECT_UNAUTHORIZED=0` 时，
-   * 在服务端进程范围内关闭证书校验；浏览器端不受影响。
-   */
-  if (import.meta.server) {
-    const disableByFlag = process.env.NUXT_DISABLE_TLS_VERIFY === '1'
-    const disableByNodeEnv = process.env.NODE_TLS_REJECT_UNAUTHORIZED === '0'
-    if (disableByFlag || disableByNodeEnv) {
-      // 仅在 Node 侧关闭 TLS 证书校验（全局作用域）
-      process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
-    }
-  }
-
   /** API 请求实例 */
   const api = $fetch.create({
     // 根据运行环境选择不同的基础路径
     baseURL: import.meta.server
-      ? runtimeConfig.public.apiBaseServer
-      : runtimeConfig.public.apiBaseClient,
+      ? runtimeConfig.public.apiBaseServer || runtimeConfig.public.apiBase
+      : runtimeConfig.public.apiBaseClient || runtimeConfig.public.apiBase,
 
     // 重要：避免在 HTTP 响应码非 2XX 时抛出异常，业务逻辑等 HTTP 异常由 onResponse 统一处理
     ignoreResponseError: true,

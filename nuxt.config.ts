@@ -6,9 +6,11 @@ export default defineNuxtConfig({
   css: ['~/assets/css/main.css', 'md-editor-v3/lib/style.css'],
   runtimeConfig: {
     public: {
-      /** 浏览器客户端 API 基础路径 */
+      /** API 基础路径 */
+      apiBase: '',
+      /** 浏览器客户端 API 基础路径（优先级高于 apiBase） */
       apiBaseClient: '',
-      /** SSR 服务端 API 基础路径 */
+      /** SSR 服务端 API 基础路径（优先级高于 apiBase） */
       apiBaseServer: ''
     }
   },

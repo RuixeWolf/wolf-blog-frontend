@@ -18,7 +18,7 @@ const {
   code,
   message,
   refresh: refreshArticleList
-} = useApi<ApiListData<Article.ArticleInfo>>('/article/query', {
+} = useApi<ApiPageData<Article.ArticleInfo>>('/article/query', {
   method: 'POST',
   headers: { 'Content-Type': 'application/nullable+json' },
   body: query

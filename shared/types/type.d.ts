@@ -14,7 +14,7 @@ declare interface ApiResponse<T = null> {
 }
 
 /** Api 请求数据 - 分页列表 */
-declare interface ApiListRequest {
+declare interface ApiPageRequest {
   /** 当前页码 */
   pageNumber?: number
   /** 每页条数 */
@@ -22,7 +22,7 @@ declare interface ApiListRequest {
 }
 
 /** Api 响应数据 - 分页列表 */
-declare interface ApiListData<T = null> {
+declare interface ApiPageData<T = null> {
   /** 当前页码 */
   currentPage: number
   /** 总页数 */

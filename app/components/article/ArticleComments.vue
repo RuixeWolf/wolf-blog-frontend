@@ -44,7 +44,7 @@ const {
   pending: commentsPending,
   error: commentsError,
   refresh: refreshComments
-} = useAsyncData<ApiListData<Article.Comment>>(
+} = useAsyncData<ApiPageData<Article.Comment>>(
   () => `article-comments-${props.articleId}`,
   () => getArticleComments({ articleId: props.articleId }),
   { watch: [() => props.articleId] }
@@ -53,7 +53,7 @@ const {
 /**
  * 评论分页数据，便于读取 `records` 和分页元信息
  */
-const commentPagination = computed<ApiListData<Article.Comment> | null>(
+const commentPagination = computed<ApiPageData<Article.Comment> | null>(
   () => commentList.value ?? null
 )
 /**
@@ -272,7 +272,6 @@ function formatDate(dateString: string) {
 
     <div class="space-y-4">
       <div class="space-y-2">
-        <label class="text-sm font-medium text-gray-700 dark:text-gray-300">发表评论</label>
         <UTextarea
           v-model="commentContent"
           :rows="4"
@@ -306,7 +305,7 @@ function formatDate(dateString: string) {
       </div>
     </div>
 
-    <div class="h-px w-full bg-gray-100 dark:bg-gray-800" />
+    <USeparator orientation="horizontal" class="my-2" />
 
     <div v-if="commentsPending" class="space-y-4">
       <USkeleton v-for="index in 3" :key="index" class="h-20 w-full rounded-lg" />

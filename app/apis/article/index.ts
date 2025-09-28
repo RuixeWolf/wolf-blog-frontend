@@ -68,5 +68,7 @@ export async function deleteArticle(articleId: Article.ArticleDetail['id']): Pro
 
 // 导出文章评论相关 API
 export * from './comment'
+// 导出文章分区相关 API
+export * from './partition'
 // 导出文章标签相关 API
 export * from './tag'

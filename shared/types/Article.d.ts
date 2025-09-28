@@ -37,7 +37,7 @@ declare namespace Article {
 
   /** 查询文章列表参数 */
   type ArticleListQuery = Partial<
-    ApiListRequest &
+    ApiPageRequest &
       Pick<ArticleDetail, 'id' | 'title' | 'authorId' | 'partitionId'> & {
         /** 发布时间开始 */
         postStart?: string
@@ -72,6 +72,38 @@ declare namespace Article {
     /** 标签 ID 列表 */
     ids: Array<Tag['id']>
   }
+
+  /** 文章分区 */
+  interface Partition {
+    /** 分区 ID */
+    id: number
+    /** 分区名称 */
+    name: string
+    /**
+     * 可见性
+     * - `0` - 公开
+     * - `1` - 私密
+     */
+    visibility: number
+    /** 排序 */
+    order: number
+    /** 子分区 */
+    children: Partition[]
+  }
+
+  /** 创建文章分区请求数据 */
+  type CreatePartitionRequest = Pick<Partition, 'name'> &
+    Partial<Pick<Partition, 'visibility' | 'order'>> & {
+      /** 父分区 ID */
+      parentId?: number
+    }
+
+  /** 增量更新文章分区请求数据 */
+  type PatchPartitionRequest = Pick<Partition, 'id'> &
+    Partial<Pick<Partition, 'name' | 'visibility' | 'order'>> & {
+      /** 父分区 ID */
+      parentId?: number
+    }
 
   /** 文章评论 */
   interface Comment {

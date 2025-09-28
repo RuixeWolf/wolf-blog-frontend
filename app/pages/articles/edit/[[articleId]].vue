@@ -2,7 +2,11 @@
 import { createArticle, patchArticle } from '~/apis/article'
 import { ARTICLE_VISIBILITY_OPTIONS } from '~~/shared/constants/article'
 import { MdEditor } from 'md-editor-v3'
+import type { HistoryState } from 'vue-router'
 import { useDark } from '@vueuse/core'
+
+/** NuxtUI Toast */
+const toast = useToast()
 
 /** Vue Route */
 const route = useRoute()
@@ -78,27 +82,32 @@ async function saveArticle() {
   saving.value = true
 
   try {
-    if (isEditing.value) {
-      // 更新文章
-      await patchArticle({
-        id: Number(articleId),
-        ...formData
-      })
-    } else {
-      // 创建文章
-      const newArticle = await createArticle({
-        authorId: currentUser.userInfo.id,
-        ...formData
-      })
-      // 创建成功后跳转到文章详情页
-      await navigateTo(`/articles/${newArticle.id}`)
-      return
-    }
-    // 编辑成功后跳转到文章详情页
-    await navigateTo(`/articles/${articleId}`)
+    // 创建或编辑文章
+    const result = isEditing.value
+      ? await patchArticle({
+          id: Number(articleId),
+          ...formData
+        })
+      : await createArticle({
+          authorId: currentUser.userInfo.id,
+          ...formData
+        })
+    // 创建或编辑成功后跳转到文章详情页并携带文章详情
+    const articleStatePayload = JSON.parse(JSON.stringify(result)) as HistoryState
+    await navigateTo({
+      path: `/articles/${result.id}`,
+      state: {
+        articleDetail: articleStatePayload
+      }
+    })
   } catch (error) {
     console.error('保存文章失败:', error)
-    // 这里可以添加错误提示
+    // 显示错误提示
+    toast.add({
+      title: '保存文章失败',
+      description: (error as Error).message || '请稍后重试',
+      color: 'error'
+    })
   } finally {
     saving.value = false
   }

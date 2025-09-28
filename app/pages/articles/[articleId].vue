@@ -1,4 +1,6 @@
 <script lang="ts" setup>
+import { getArticleDetail } from '~/apis/article'
+import { ApiError } from '~~/shared/types/ApiError'
 import { MdCatalog, MdPreview } from 'md-editor-v3'
 import { storeToRefs } from 'pinia'
 import { computed, ref, watch } from 'vue'
@@ -21,17 +23,110 @@ const loginRedirectPath = computed(() => {
 const commentSectionRef = ref<{ scrollToComments: () => void } | null>(null)
 const commentCount = ref(0)
 
+const routeCacheHit = ref(false)
+
+/**
+ * 尝试复用通过 Vue Router 导航状态携带的文章详情。
+ * 如果缓存的数据属于当前路由，会立刻从 history state 中移除，避免后续页面再次复用。
+ * @param {number} targetArticleId 当前路由解析出的文章 ID。
+ * @returns {Article.ArticleDetail | null} 命中缓存时返回文章详情，否则返回 null。
+ */
+function consumeArticleDetailFromHistory(targetArticleId: number): Article.ArticleDetail | null {
+  if (!import.meta.client) return null
+  const rawState = window.history.state
+  if (!rawState || typeof rawState !== 'object') return null
+  const state = rawState as Record<string, unknown>
+  const currentPath = typeof state.current === 'string' ? state.current : null
+  if (currentPath && currentPath !== route.fullPath) return null
+  const rawArticle = state.articleDetail
+  if (rawArticle && typeof rawArticle === 'object') {
+    const articleDetail = rawArticle as Article.ArticleDetail
+    if (Number(articleDetail.id) === targetArticleId) {
+      const { articleDetail: _omit, ...rest } = state
+      window.history.replaceState(rest, '', window.location.href)
+      return articleDetail
+    }
+  }
+  return null
+}
+
+/**
+ * 清理浏览器 history state 中残留的文章详情数据。
+ * 在触发网络刷新前调用，确保不会再次使用已过期的旧数据。
+ */
+function clearArticleDetailFromHistory() {
+  if (!import.meta.client) return
+  const rawState = window.history.state
+  if (!rawState || typeof rawState !== 'object') return
+  if (!('articleDetail' in rawState)) return
+  const state = rawState as Record<string, unknown>
+  const { articleDetail: _omit, ...rest } = state
+  window.history.replaceState(rest, '', window.location.href)
+}
+
 const {
   data: article,
-  status,
   pending,
-  success,
-  code,
-  message,
-  refresh
-} = useApi<Article.ArticleDetail>(() => `/article/${articleId.value}`, {
-  watch: [articleId]
+  status,
+  error,
+  refresh: refreshArticleDetail
+} = await useAsyncData<Article.ArticleDetail | null, ApiError>(
+  () => `article-detail-${articleId.value}`,
+  /**
+   * 获取文章详情数据：在客户端优先使用路由状态中的缓存，否则回退到接口请求。
+   * @throws {Error} 当路由解析出的文章 ID 非法时抛出错误。
+   */
+  async (): Promise<Article.ArticleDetail> => {
+    const id = articleId.value
+    routeCacheHit.value = false
+    if (!Number.isFinite(id)) {
+      throw new Error('Invalid article id')
+    }
+
+    if (import.meta.client) {
+      const cached = consumeArticleDetailFromHistory(id)
+      if (cached) {
+        routeCacheHit.value = true
+        return cached
+      }
+    }
+
+    return await getArticleDetail(id)
+  },
+  {
+    watch: [articleId],
+    default: () => null
+  }
+)
+
+const success = computed(() => status.value === 'success' && article.value != null)
+
+const code = computed(() => {
+  const err = error.value
+  if (!err) return undefined
+  if (err instanceof ApiError) return err.code
+  const maybeStatus = (err as { statusCode?: number }).statusCode
+  if (typeof maybeStatus === 'number') return `HTTP_${maybeStatus}`
+  return 'UNKNOWN'
 })
+
+const message = computed(() => {
+  const err = error.value
+  if (err) return err.message || '未知错误'
+  if (routeCacheHit.value) return '已复用上一页的文章数据，未再次请求'
+  return '未知错误'
+})
+
+/**
+ * 强制重新获取文章详情，并在请求前清空路由缓存状态，确保刷新数据为最新。
+ */
+const refresh = async () => {
+  routeCacheHit.value = false
+  if (import.meta.client) {
+    clearArticleDetailFromHistory()
+  }
+  return refreshArticleDetail()
+}
 
 const isDark = computed(() => colorMode.value === 'dark')
 

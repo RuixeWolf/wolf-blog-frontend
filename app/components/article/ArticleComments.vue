@@ -248,7 +248,7 @@ function formatDate(dateString: string) {
 </script>
 
 <template>
-  <UCard ref="commentSectionEl" class="space-y-6">
+  <UCard ref="commentSectionEl">
     <template #header>
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-2">
@@ -274,6 +274,7 @@ function formatDate(dateString: string) {
       <div class="space-y-2">
         <UTextarea
           v-model="commentContent"
+          class="w-full"
           :rows="4"
           placeholder="分享你的想法..."
           :disabled="isSubmittingComment || !isLoggedIn"
@@ -305,7 +306,7 @@ function formatDate(dateString: string) {
       </div>
     </div>
 
-    <USeparator orientation="horizontal" class="my-2" />
+    <USeparator orientation="horizontal" class="my-4" />
 
     <div v-if="commentsPending" class="space-y-4">
       <USkeleton v-for="index in 3" :key="index" class="h-20 w-full rounded-lg" />

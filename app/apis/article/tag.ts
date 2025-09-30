@@ -1,3 +1,5 @@
+import { ApiError } from '../../../shared/types/ApiError'
+
 /** 文章标签相关 API */
 
 /**

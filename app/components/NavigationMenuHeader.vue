@@ -24,7 +24,7 @@ const navigationMenu = computed<NavigationMenuItem[][]>(() => [
           // 使用固定的 label 避免水合不一致
           label: currentUser.userInfo?.username,
           avatar: {
-            src: currentUser.userInfo?.avatar,
+            src: currentUser.userInfo?.avatar ?? undefined,
             alt: '用户头像',
             icon: 'lucide:user'
           },
@@ -67,7 +67,7 @@ async function handleLogout(): Promise<void> {
         <div class="max-w-xs">
           <div class="flex items-center gap-3 p-4">
             <UAvatar
-              :src="currentUser.userInfo?.avatar"
+              :src="currentUser.userInfo?.avatar ?? undefined"
               :alt="currentUser.userInfo?.username"
               class="h-10 w-10"
             />
@@ -88,7 +88,7 @@ async function handleLogout(): Promise<void> {
               color="neutral"
               icon="i-lucide-user"
               class="w-full justify-start px-4 py-2"
-              to="/user/profile"
+              :to="`/user/${currentUser.userInfo?.id}`"
             >
               个人资料
             </UButton>

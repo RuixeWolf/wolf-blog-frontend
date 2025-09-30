@@ -8,6 +8,8 @@ declare namespace Article {
     title: string
     /** 文章摘要/主要内容概述 */
     primary: string
+    /** 浏览量 */
+    views: number
     /** 作者用户ID */
     authorId: number
     /** 文章发布时间 */
@@ -17,7 +19,7 @@ declare namespace Article {
      * - `0` - 公开
      * - `1` - 私密
      */
-    visibility: number
+    visibility: 0 | 1
   }
 
   /** 文章详情 */
@@ -25,7 +27,7 @@ declare namespace Article {
     /** 文章正文内容 */
     content: string
     /** 文章所属分区ID */
-    partitionId: number
+    partitionId: number | null
     /** 文章标签列表 */
     tags: string[] | null
     /** 常用标签 ID 列表 */
@@ -35,19 +37,48 @@ declare namespace Article {
   /** 文章列表 */
   type ArticleList = ArticleInfo[]
 
+  /** 排序字段定义 */
+  interface OrderField {
+    /** 排序字段名 */
+    field: string
+    /** 是否升序 */
+    isAsc?: boolean
+    /** 缺失值处理策略 */
+    missing?: string
+  }
+
   /** 查询文章列表参数 */
-  type ArticleListQuery = Partial<
-    ApiPageRequest &
-      Pick<ArticleDetail, 'id' | 'title' | 'authorId' | 'partitionId'> & {
-        /** 发布时间开始 */
-        postStart?: string
-        /** 发布时间结束 */
-        postEnd?: string
-      }
-  >
+  interface ArticleListQuery extends Partial<ApiPageRequest> {
+    /** 文章 ID */
+    id?: number
+    /** 标题关键字 */
+    title?: string
+    /** 内容关键字（高亮时返回全文） */
+    content?: string
+    /** 作者 ID */
+    authorId?: number
+    /** 分区 ID */
+    partitionId?: number
+    /** 可见性 */
+    visibility?: 0 | 1
+    /** 发布时间开始 */
+    postStart?: string
+    /** 发布时间结束 */
+    postEnd?: string
+    /** 是否启用高亮 */
+    highlight?: boolean
+    /** 排序字段 */
+    sort?: OrderField[]
+  }
+
+  /** 文章查询结果记录 */
+  type ArticleQueryRecord = ArticleInfo | ArticleDetail
+
+  /** 文章查询结果 */
+  type ArticleQueryResult = ApiPageData<ArticleQueryRecord>
 
   /** 创建文章请求数据 */
-  type CreateArticleRequest = Pick<ArticleDetail, 'authorId' | 'title' | 'primary' | 'content'> &
+  type CreateArticleRequest = Pick<ArticleDetail, 'title' | 'primary' | 'content'> &
     Partial<Pick<ArticleDetail, 'tags' | 'comUseTags' | 'visibility' | 'partitionId'>>
 
   /** 增量更新文章请求数据 */
@@ -111,6 +142,8 @@ declare namespace Article {
     id: number
     /** 评论用户 ID */
     userId: number
+    /** 评论所属文章 ID */
+    articleId?: number
     /** 回复的评论 ID */
     replyId: number | null
     /** 评论内容 */
@@ -125,8 +158,9 @@ declare namespace Article {
   /** 获取文章评论查询参数 */
   type CommentListQuery = {
     /** 文章 ID */
-    articleId: number
-  } & Partial<Pick<Comment, 'userId' | 'replyId'>>
+    articleId?: number
+  } & Partial<Pick<Comment, 'userId' | 'replyId'>> &
+    Partial<ApiPageRequest>
 
   /** 创建评论请求数据 */
   type CreateCommentRequest = Pick<Comment, 'articleId' | 'content'> &
@@ -138,5 +172,19 @@ declare namespace Article {
     commentId: number
     /** 文章 ID */
     articleId: number
+  }
+
+  /** 文章暂存请求数据 */
+  type DraftRequest = Pick<ArticleDetail, 'id' | 'title' | 'content'> &
+    Partial<Pick<ArticleDetail, 'primary' | 'partitionId' | 'tags' | 'comUseTags' | 'visibility'>>
+
+  /** 文章收藏关联信息 */
+  interface ArticleFavoriteRecord {
+    /** 文章 ID */
+    articleId: number
+    /** 收藏夹 ID */
+    favoriteId: number
+    /** 收藏时间 */
+    favoriteDate: string
   }
 }

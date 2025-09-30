@@ -1,3 +1,5 @@
+import { ApiError } from '../../../shared/types/ApiError'
+
 /** 获取当前登录用户是否点赞指定文章 */
 export async function getArticleSelfLikeStatus(
   articleId: Article.ArticleInfo['id']

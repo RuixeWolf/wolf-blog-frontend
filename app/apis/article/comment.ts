@@ -1,3 +1,6 @@
+import { ApiError } from '../../../shared/types/ApiError'
+import { filterUndefinedFields, optionalField } from '../../../shared/utils/data-process'
+
 /** 文章评论相关 API */
 
 /** 获取文章评论列表 */
@@ -6,9 +9,11 @@ export async function getArticleComments(
 ): Promise<ApiPageData<Article.Comment>> {
   const { $api } = useNuxtApp()
   const body = filterUndefinedFields({
-    articleId: Number(query.articleId),
+    articleId: optionalField(query.articleId, Number),
     userId: optionalField(query.userId, Number),
-    replyId: optionalField(query.replyId, Number)
+    replyId: optionalField(query.replyId, Number),
+    pageNumber: optionalField(query.pageNumber, Number),
+    pageSize: optionalField(query.pageSize, Number)
   })
   const response = await $api<ApiResponse<ApiPageData<Article.Comment>>>('/article/comment', {
     method: 'POST',

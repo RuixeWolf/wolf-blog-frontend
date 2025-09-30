@@ -151,7 +151,7 @@ useHead({
 /** 跳转至新建文章页面 */
 function goToNewArticle() {
   if (isLoggedIn.value) navigateTo('/articles/edit')
-  else navigateTo('/user/login')
+  else navigateTo({ path: '/user/login', query: { redirect: '/articles/edit' } })
 }
 </script>
 

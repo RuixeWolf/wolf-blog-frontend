@@ -11,7 +11,7 @@ declare namespace Favorite {
      * - `0` - 公开
      * - `1` - 私密
      */
-    visibility: number
+    visibility: 0 | 1
     /**
      * 是否默认收藏夹
      * - `0` - 否
@@ -35,8 +35,24 @@ declare namespace Favorite {
   }
 
   /** 获取收藏夹的文章列表请求数据 */
-  type FavoriteArticleListQuery = {
+  type FavoriteArticleListQuery = Partial<ApiPageRequest> & {
     /** 收藏夹 ID */
     favoritesId: Favorite.FavoriteFolder['id']
   }
+
+  /** 收藏记录 */
+  interface FavoriteArticleRecord {
+    /** 文章 ID */
+    articleId: number
+    /** 收藏夹 ID */
+    favoriteId: number
+    /** 收藏时间 */
+    favoriteDate: string
+  }
+
+  /** 收藏夹集合 */
+  type FavoriteFolderList = FavoriteFolder[]
+
+  /** 收藏夹文章分页结果 */
+  type FavoriteArticlePage = ApiPageData<Article.ArticleInfo>
 }

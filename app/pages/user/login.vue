@@ -4,6 +4,7 @@ import type { FormSubmitEvent } from '@nuxt/ui'
 
 const toast = useToast()
 const currentUser = useCurrentUser()
+const route = useRoute()
 
 // 定义验证 schema
 const loginSchema = z.object({
@@ -21,7 +22,8 @@ useHead({
 })
 
 if (import.meta.client && currentUser.isLoggedIn) {
-  navigateTo('/', { replace: true })
+  const redirectPath = route.query.redirect as string | undefined
+  navigateTo(redirectPath || '/', { replace: true })
 }
 
 /** 登录表单数据 */
@@ -43,7 +45,8 @@ async function handleSubmit(event: FormSubmitEvent<LoginForm>): Promise<void> {
       description: '欢迎回来！',
       color: 'success'
     })
-    navigateTo('/', { replace: true })
+    const redirectPath = route.query.redirect as string | undefined
+    navigateTo(redirectPath || '/', { replace: true })
   } catch (error) {
     if (error instanceof ApiError) {
       const { code, message } = error

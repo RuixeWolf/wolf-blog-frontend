@@ -1,3 +1,44 @@
+import { ApiError } from '../../../shared/types/ApiError'
+import { filterUndefinedFields, optionalField } from '../../../shared/utils/data-process'
+
+/** 查询文章列表 */
+export async function queryArticles(
+  query: Article.ArticleListQuery = {}
+): Promise<Article.ArticleQueryResult> {
+  const { $api } = useNuxtApp()
+  const body = filterUndefinedFields({
+    id: optionalField(query.id, Number),
+    title: optionalField(query.title, String),
+    content: optionalField(query.content, String),
+    authorId: optionalField(query.authorId, Number),
+    partitionId: optionalField(query.partitionId, Number),
+    visibility: optionalField(query.visibility, Number) as 0 | 1 | undefined,
+    postStart: optionalField(query.postStart, String),
+    postEnd: optionalField(query.postEnd, String),
+    highlight: optionalField(query.highlight, Boolean),
+    sort: optionalField(query.sort, (sort: Article.OrderField[]) =>
+      Array.isArray(sort)
+        ? sort.map((item) =>
+            filterUndefinedFields({
+              field: String(item.field),
+              isAsc: optionalField(item.isAsc, Boolean),
+              missing: optionalField(item.missing, String)
+            })
+          )
+        : []
+    ),
+    pageNumber: optionalField(query.pageNumber, Number),
+    pageSize: optionalField(query.pageSize, Number)
+  })
+  const response = await $api<ApiResponse<Article.ArticleQueryResult>>('/article/query', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/nullable+json' },
+    body
+  })
+  if (!response.success) throw new ApiError(response)
+  return response.data
+}
+
 /** 获取文章详情 */
 export async function getArticleDetail(
   articleId: Article.ArticleDetail['id']

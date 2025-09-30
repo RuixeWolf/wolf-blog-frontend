@@ -25,7 +25,7 @@ const isEditing = computed(() => articleId && articleId !== 'new')
 
 /** 表单状态 */
 const formData = reactive<
-  Omit<Article.CreateArticleRequest & Article.PatchArticleRequest, 'id' | 'authorId' | 'postTime'>
+  Omit<Article.CreateArticleRequest & Article.PatchArticleRequest, 'id' | 'postTime'>
 >({
   title: '',
   primary: '',
@@ -89,7 +89,6 @@ async function saveArticle() {
           ...formData
         })
       : await createArticle({
-          authorId: currentUser.userInfo.id,
           ...formData
         })
     // 创建或编辑成功后跳转到文章详情页并携带文章详情

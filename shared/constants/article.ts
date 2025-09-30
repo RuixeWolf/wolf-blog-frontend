@@ -9,6 +9,6 @@ export const ARTICLE_VISIBILITY_OPTIONS: Array<{
   value: Article.ArticleInfo['visibility']
   label: string
 }> = Object.entries(ARTICLE_VISIBILITY_NAME_MAP).map(([value, label]) => ({
-  value: Number(value),
+  value: Number(value) as Article.ArticleInfo['visibility'],
   label
 }))

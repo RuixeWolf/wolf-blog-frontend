@@ -10,8 +10,6 @@ declare namespace Article {
     primary: string
     /** 浏览量 */
     views: number
-    /** 作者用户ID */
-    authorId: number
     /** 文章发布时间 */
     postTime: string
     /**
@@ -20,6 +18,8 @@ declare namespace Article {
      * - `1` - 私密
      */
     visibility: 0 | 1
+    /** 作者信息 */
+    author: Pick<User.UserInfo, 'id' | 'account' | 'nickname' | 'avatar' | 'personalStatus'>
   }
 
   /** 文章详情 */

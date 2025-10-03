@@ -14,5 +14,13 @@ export default defineNuxtConfig({
       apiBaseServer: ''
     }
   },
-  ui: { fonts: false }
+  ui: { fonts: false },
+  icon: {
+    customCollections: [
+      {
+        prefix: 'app-icons',
+        dir: './app/assets/icons'
+      }
+    ]
+  }
 })

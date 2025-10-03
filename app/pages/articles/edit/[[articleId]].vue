@@ -1,9 +1,7 @@
 <script lang="ts" setup>
 import { createArticle, patchArticle } from '~/apis/article'
 import { ARTICLE_VISIBILITY_OPTIONS } from '~~/shared/constants/article'
-import { MdEditor } from 'md-editor-v3'
 import type { HistoryState } from 'vue-router'
-import { useDark } from '@vueuse/core'
 
 /** NuxtUI Toast */
 const toast = useToast()
@@ -18,7 +16,8 @@ const currentUser = useCurrentUser()
 const articleId = (route.params.articleId as string) || ''
 
 /** 黑暗模式 */
-const isDark = useDark()
+const colorMode = useColorMode()
+const isDark = computed(() => colorMode.value === 'dark')
 
 /** 编辑器模式 */
 const isEditing = computed(() => articleId && articleId !== 'new')
@@ -165,13 +164,7 @@ useHead(() => ({
     <!-- 返回按钮和页面标题 -->
     <div class="mb-4 flex items-center justify-between">
       <div class="flex items-center gap-3">
-        <UButton
-          icon="i-lucide-arrow-left"
-          variant="ghost"
-          color="neutral"
-          size="sm"
-          @click="goBack"
-        >
+        <UButton icon="i-lucide-arrow-left" variant="ghost" color="neutral" @click="goBack">
           返回
         </UButton>
         <h1 class="text-xl font-bold">
@@ -360,6 +353,19 @@ useHead(() => ({
           />
         </div>
       </UCard>
+
+      <!-- 发布 -->
+      <div class="flex flex-row items-center justify-center">
+        <UButton
+          size="lg"
+          icon="i-lucide-save"
+          :loading="saving"
+          :disabled="!formData.title.trim() || !formData.content.trim()"
+          @click="saveArticle"
+        >
+          确认{{ isEditing ? '更新' : '发布' }}
+        </UButton>
+      </div>
     </div>
 
     <!-- 隐藏的文件输入 -->

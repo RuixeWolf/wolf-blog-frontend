@@ -291,7 +291,7 @@ function goToNewArticle() {
             <span>每页</span>
             <USelect
               v-model="query.pageSize"
-              :options="[
+              :items="[
                 { label: '10', value: 10 },
                 { label: '20', value: 20 },
                 { label: '50', value: 50 }
@@ -355,7 +355,7 @@ function goToNewArticle() {
         <ul class="space-y-4">
           <li v-for="article in articleList.records" :key="article.id">
             <UCard class="transition-shadow duration-200 hover:shadow-md">
-              <div class="p-4">
+              <div>
                 <NuxtLink :to="`/articles/${article.id}`" class="group block">
                   <h3
                     class="group-hover:text-primary-600 text-lg font-semibold text-gray-900 transition-colors dark:text-white"
@@ -365,27 +365,22 @@ function goToNewArticle() {
 
                   <div
                     v-if="article.primary"
-                    class="mt-2 line-clamp-2 text-gray-600 dark:text-gray-300"
+                    class="mt-1 line-clamp-2 text-gray-600 dark:text-gray-300"
                   >
                     {{ article.primary }}
                   </div>
-
                   <div
-                    class="mt-3 flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400"
+                    class="mt-2 flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400"
                   >
                     <div class="flex items-center gap-1">
                       <UIcon name="i-lucide-user" class="h-4 w-4" />
-                      <span>作者ID: {{ article.authorId }}</span>
+                      <ULink :to="`/user/${article.author?.id}`">{{
+                        article.author?.nickname ?? article.author?.account
+                      }}</ULink>
                     </div>
-
                     <div v-if="article.postTime" class="flex items-center gap-1">
                       <UIcon name="i-lucide-calendar" class="h-4 w-4" />
                       <span>{{ formatDateTime(article.postTime, 'YYYY-MM-DD HH:mm') }}</span>
-                    </div>
-
-                    <div class="flex items-center gap-1">
-                      <UIcon name="i-lucide-eye" class="h-4 w-4" />
-                      <span>{{ article.visibility === 0 ? '公开' : '私密' }}</span>
                     </div>
                   </div>
                 </NuxtLink>

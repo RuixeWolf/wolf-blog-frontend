@@ -29,6 +29,14 @@ const lastScrollY = ref(0)
 const isToolbarVisible = ref(true)
 const scrollThreshold = 50 // 滚动阈值，滚动超过此距离才触发隐藏/显示
 
+const { y: windowScrollY } = useWindowScroll()
+
+/** 是否显示工具栏阴影 */
+const shouldShowShadow = computed(() => {
+  if (!import.meta.client) return true
+  return windowScrollY.value > 0
+})
+
 /**
  * 尝试复用通过 Vue Router 导航状态携带的文章详情。
  * 如果缓存的数据属于当前路由，会立刻从 history state 中移除，避免后续页面再次复用。
@@ -132,7 +140,8 @@ const refresh = async () => {
   return refreshArticleDetail()
 }
 
-const isDark = useDark()
+const colorMode = useColorMode()
+const isDark = computed(() => colorMode.value === 'dark')
 
 function redirectToLogin() {
   navigateTo(loginRedirectPath.value)
@@ -162,7 +171,7 @@ const dropdownItems = computed(() => {
   const items = []
 
   // 作者可见的操作
-  if (isLoggedIn.value && userInfo.value?.id === article.value?.authorId) {
+  if (isLoggedIn.value && userInfo.value?.id === article.value?.author.id) {
     items.push(
       {
         label: '编辑',
@@ -181,7 +190,7 @@ const dropdownItems = computed(() => {
   items.push(
     {
       label: isLiked.value ? '已点赞' : '点赞',
-      icon: isLiked.value ? 'i-lucide-heart' : 'i-lucide-heart-off',
+      icon: 'lucide:thumbs-up',
       click: handleToggleLike
     },
     {
@@ -199,14 +208,7 @@ const dropdownItems = computed(() => {
     {
       label: '分享',
       icon: 'i-lucide-share-2',
-      click: () => {
-        // TODO: 实现分享功能
-        toast.add({
-          title: '功能开发中',
-          description: '分享功能即将上线',
-          color: 'info'
-        })
-      }
+      click: handleShareArticle
     }
   )
 
@@ -347,6 +349,39 @@ async function handleDeleteArticle() {
   }
 }
 
+/** 分享文章 */
+async function handleShareArticle() {
+  if (!import.meta.client) return
+
+  try {
+    // 获取当前页面URL
+    const currentUrl = window.location.href
+
+    // 构造分享URL，添加分享来源参数
+    const url = new URL(currentUrl)
+    if (userInfo.value?.id) {
+      url.searchParams.set('shared_from_user', userInfo.value.id.toString())
+    }
+
+    // 复制到剪贴板
+    await navigator.clipboard.writeText(url.toString())
+
+    // 显示成功提示
+    toast.add({
+      title: '分享链接已复制',
+      description: '链接已复制到剪贴板，可以分享给其他人',
+      color: 'success'
+    })
+  } catch (error) {
+    console.error('分享失败', error)
+    toast.add({
+      title: '分享失败',
+      description: '无法访问剪贴板，请手动复制链接',
+      color: 'error'
+    })
+  }
+}
+
 useHead(() => ({
   title: article.value?.title ? `${article.value.title} - Wolf Blog` : 'Wolf Blog',
   meta: [{ name: 'description', content: article.value?.primary || '文章详情页' }]
@@ -377,7 +412,8 @@ onUnmounted(() => {
     >
       <UContainer>
         <div
-          class="flex items-center justify-between rounded-lg border border-gray-200 bg-white/80 px-4 py-3 shadow-lg backdrop-blur dark:border-gray-800 dark:bg-gray-900/80"
+          class="flex items-center justify-between rounded-lg border border-gray-200 bg-white/80 px-4 py-3 backdrop-blur dark:border-gray-800 dark:bg-gray-900/80"
+          :class="{ 'shadow-lg': shouldShowShadow }"
         >
           <!-- 左侧：返回按钮 -->
           <div class="flex items-center">
@@ -392,28 +428,29 @@ onUnmounted(() => {
             <!-- 桌面端显示 -->
             <div class="hidden items-center gap-2 md:flex">
               <!-- 作者可见的操作 -->
-              <template v-if="isLoggedIn && userInfo?.id === article?.authorId">
+              <template v-if="isLoggedIn && userInfo?.id === article?.author.id">
                 <UButton
                   icon="i-lucide-edit"
-                  variant="ghost"
                   color="neutral"
+                  variant="soft"
                   @click="() => void navigateTo(`/articles/edit/${articleId}`)"
                 >
                   编辑
                 </UButton>
                 <UButton
                   icon="i-lucide-trash-2"
-                  variant="ghost"
                   color="error"
+                  variant="soft"
                   @click="handleDeleteArticle"
                 >
                   删除
                 </UButton>
+                <USeparator orientation="vertical" class="h-6" />
               </template>
 
               <!-- 通用操作 -->
               <UButton
-                :icon="isLiked ? 'i-lucide-heart' : 'i-lucide-heart-off'"
+                icon="lucide:thumbs-up"
                 :color="isLiked ? 'primary' : 'neutral'"
                 :variant="isLiked ? 'solid' : 'outline'"
                 :loading="likeStatusLoading || likeMutationLoading"
@@ -421,8 +458,15 @@ onUnmounted(() => {
               >
                 {{ isLiked ? '已点赞' : '点赞' }}
               </UButton>
-              <UButton icon="i-lucide-bookmark" variant="outline" color="neutral"> 收藏 </UButton>
-              <UButton icon="i-lucide-share-2" variant="outline" color="neutral"> 分享 </UButton>
+              <UButton icon="i-lucide-bookmark" variant="outline" color="neutral">收藏</UButton>
+              <UButton
+                icon="i-lucide-share-2"
+                variant="outline"
+                color="neutral"
+                @click="handleShareArticle"
+              >
+                分享
+              </UButton>
             </div>
 
             <!-- 移动端下拉菜单 -->
@@ -483,11 +527,13 @@ onUnmounted(() => {
               >
                 <div class="flex items-center gap-2">
                   <UIcon name="i-lucide-calendar" class="h-4 w-4" />
-                  <span>{{ formatDateTime(article.postTime) }}</span>
+                  <span>{{ formatDateTime(article.postTime, 'YYYY-MM-DD HH:mm') }}</span>
                 </div>
                 <div class="flex items-center gap-2">
                   <UIcon name="i-lucide-user" class="h-4 w-4" />
-                  <span>作者 ID: {{ article.authorId }}</span>
+                  <ULink :to="`/user/${article.author.id}`"
+                    >作者: {{ article.author.nickname ?? article.author.account }}</ULink
+                  >
                 </div>
                 <div class="flex items-center gap-2">
                   <UIcon name="i-lucide-folder" class="h-4 w-4" />
@@ -534,7 +580,7 @@ onUnmounted(() => {
         <ArticleComments
           ref="commentSectionRef"
           :article-id="article.id"
-          :article-author-id="article.authorId"
+          :article-author-id="article.author.id"
           :login-redirect-path="loginRedirectPath"
           @update:count="handleCommentCountUpdate"
         />

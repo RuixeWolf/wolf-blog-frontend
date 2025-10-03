@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "@nuxt/eslint": "1.9.0",
-    "@nuxt/ui": "4.0.0",
+    "@nuxt/ui": "4.0.1",
     "@nuxthub/core": "^0.9.0",
     "@pinia/nuxt": "^0.11.2",
     "@vueuse/core": "^13.9.0",
@@ -23,7 +23,7 @@
     "md-editor-v3": "^6.0.1",
     "nuxt": "^4.1.2",
     "pinia": "^3.0.3",
-    "typescript": "^5.9.2",
+    "typescript": "^5.9.3",
     "vue": "^3.5.22",
     "vue-router": "^4.5.1",
     "zod": "^4.1.11"
@@ -34,6 +34,6 @@
     "prettier": "^3.6.2",
     "prettier-plugin-tailwindcss": "^0.6.14",
     "sass-embedded": "^1.93.2",
-    "vue-tsc": "^3.0.8"
+    "vue-tsc": "^3.1.0"
   }
 }

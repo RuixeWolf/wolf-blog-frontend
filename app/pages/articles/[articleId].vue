@@ -1,9 +1,9 @@
 <script lang="ts" setup>
-import { getArticleDetail } from '~/apis/article'
+import { deleteArticle, getArticleDetail } from '~/apis/article'
 import { ApiError } from '~~/shared/types/ApiError'
 import { MdCatalog, MdPreview } from 'md-editor-v3'
 import { storeToRefs } from 'pinia'
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { getArticleSelfLikeStatus, likeArticle, unlikeArticle } from '@/apis/article/like'
 
 const route = useRoute()
@@ -23,6 +23,11 @@ const commentSectionRef = ref<{ scrollToComments: () => void } | null>(null)
 const commentCount = ref(0)
 
 const routeCacheHit = ref(false)
+
+/** 工具栏滚动控制 */
+const lastScrollY = ref(0)
+const isToolbarVisible = ref(true)
+const scrollThreshold = 50 // 滚动阈值，滚动超过此距离才触发隐藏/显示
 
 /**
  * 尝试复用通过 Vue Router 导航状态携带的文章详情。
@@ -137,42 +142,75 @@ function handleCommentCountUpdate(count: number) {
   commentCount.value = count
 }
 
-function scrollToComments() {
+/** 处理滚动事件 */
+function handleScroll() {
   if (!import.meta.client) return
-  commentSectionRef.value?.scrollToComments()
+
+  const currentScrollY = window.scrollY
+  const scrollDifference = currentScrollY - lastScrollY.value
+
+  // 如果滚动距离超过阈值，则更新工具栏显示状态
+  if (Math.abs(scrollDifference) > scrollThreshold) {
+    // 向下滚动时隐藏工具栏，向上滚动时显示工具栏
+    isToolbarVisible.value = scrollDifference < 0
+    lastScrollY.value = currentScrollY
+  }
 }
 
-const toolbarVisible = ref(true)
-const lastScrollY = ref(0)
-const scrollThreshold = 12
+/** 下拉菜单项 */
+const dropdownItems = computed(() => {
+  const items = []
 
-function handleToolbarVisibility() {
-  if (!import.meta.client) return
-  const current = window.scrollY || 0
-  const maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight)
-
-  if (current <= 0) {
-    toolbarVisible.value = true
-  } else if (current > lastScrollY.value + scrollThreshold) {
-    toolbarVisible.value = false
-  } else if (current < lastScrollY.value - scrollThreshold) {
-    toolbarVisible.value = true
-  } else if (current >= maxScroll - scrollThreshold) {
-    toolbarVisible.value = true
+  // 作者可见的操作
+  if (isLoggedIn.value && userInfo.value?.id === article.value?.authorId) {
+    items.push(
+      {
+        label: '编辑',
+        icon: 'i-lucide-edit',
+        click: () => navigateTo(`/articles/edit/${articleId.value}`)
+      },
+      {
+        label: '删除',
+        icon: 'i-lucide-trash-2',
+        click: handleDeleteArticle
+      }
+    )
   }
 
-  lastScrollY.value = current
-}
+  // 通用操作
+  items.push(
+    {
+      label: isLiked.value ? '已点赞' : '点赞',
+      icon: isLiked.value ? 'i-lucide-heart' : 'i-lucide-heart-off',
+      click: handleToggleLike
+    },
+    {
+      label: '收藏',
+      icon: 'i-lucide-bookmark',
+      click: () => {
+        // TODO: 实现收藏功能
+        toast.add({
+          title: '功能开发中',
+          description: '收藏功能即将上线',
+          color: 'info'
+        })
+      }
+    },
+    {
+      label: '分享',
+      icon: 'i-lucide-share-2',
+      click: () => {
+        // TODO: 实现分享功能
+        toast.add({
+          title: '功能开发中',
+          description: '分享功能即将上线',
+          color: 'info'
+        })
+      }
+    }
+  )
 
-onMounted(() => {
-  if (!import.meta.client) return
-  lastScrollY.value = window.scrollY || 0
-  window.addEventListener('scroll', handleToolbarVisibility, { passive: true })
-})
-
-onBeforeUnmount(() => {
-  if (!import.meta.client) return
-  window.removeEventListener('scroll', handleToolbarVisibility)
+  return items
 })
 
 const likeMutationLoading = ref(false)
@@ -283,61 +321,123 @@ function retry() {
   refresh()
 }
 
+/** 删除文章 */
+async function handleDeleteArticle() {
+  if (!article.value) return
+
+  const confirmed = confirm('确定要删除这篇文章吗？此操作不可撤销。')
+  if (!confirmed) return
+
+  try {
+    await deleteArticle(article.value.id)
+    toast.add({
+      title: '删除成功',
+      description: '文章已删除',
+      color: 'success'
+    })
+    // 删除成功后返回文章列表
+    navigateTo('/')
+  } catch (error) {
+    console.error('删除文章失败', error)
+    toast.add({
+      title: '删除失败',
+      description: '请稍后再试',
+      color: 'error'
+    })
+  }
+}
+
 useHead(() => ({
   title: article.value?.title ? `${article.value.title} - Wolf Blog` : 'Wolf Blog',
   meta: [{ name: 'description', content: article.value?.primary || '文章详情页' }]
 }))
+
+/** 滚动事件监听 */
+onMounted(() => {
+  if (import.meta.client) {
+    lastScrollY.value = window.scrollY
+    window.addEventListener('scroll', handleScroll, { passive: true })
+  }
+})
+
+onUnmounted(() => {
+  if (import.meta.client) {
+    window.removeEventListener('scroll', handleScroll)
+  }
+})
 </script>
 
 <template>
   <div>
-    <div class="fixed inset-x-0 bottom-6 z-50 px-4">
-      <div
-        class="mx-auto flex max-w-5xl transform flex-wrap items-center justify-between gap-3 rounded-lg border border-gray-200 bg-white/80 px-4 py-3 backdrop-blur transition-all duration-300 ease-out dark:border-gray-800 dark:bg-gray-900/80"
-        :class="{
-          'pointer-events-none translate-y-full opacity-0': !toolbarVisible,
-          'translate-y-0 shadow-lg': toolbarVisible
-        }"
-      >
-        <div class="flex items-center gap-2">
-          <UButton icon="i-lucide-arrow-left" variant="ghost" color="neutral" @click="goBack">
-            返回文章列表
-          </UButton>
-          <UButton
-            v-if="isLoggedIn && userInfo?.id === article?.authorId"
-            icon="i-lucide-edit"
-            variant="ghost"
-            color="neutral"
-            @click="() => void navigateTo(`/articles/edit/${articleId}`)"
-          >
-            编辑文章
-          </UButton>
+    <!-- Toolbar -->
+    <div
+      class="fixed inset-x-0 z-40 transition-opacity duration-300 ease-in-out"
+      :class="{ 'pointer-events-none opacity-0': !isToolbarVisible }"
+      :style="{ top: 'calc(var(--ui-header-height) + 1rem)' }"
+    >
+      <UContainer>
+        <div
+          class="flex items-center justify-between rounded-lg border border-gray-200 bg-white/80 px-4 py-3 shadow-lg backdrop-blur dark:border-gray-800 dark:bg-gray-900/80"
+        >
+          <!-- 左侧：返回按钮 -->
+          <div class="flex items-center">
+            <UButton icon="i-lucide-arrow-left" variant="ghost" color="neutral" @click="goBack">
+              <span class="hidden sm:inline">返回文章列表</span>
+              <span class="sm:hidden">返回</span>
+            </UButton>
+          </div>
+
+          <!-- 右侧：操作按钮 -->
+          <div class="flex items-center gap-2">
+            <!-- 桌面端显示 -->
+            <div class="hidden items-center gap-2 md:flex">
+              <!-- 作者可见的操作 -->
+              <template v-if="isLoggedIn && userInfo?.id === article?.authorId">
+                <UButton
+                  icon="i-lucide-edit"
+                  variant="ghost"
+                  color="neutral"
+                  @click="() => void navigateTo(`/articles/edit/${articleId}`)"
+                >
+                  编辑
+                </UButton>
+                <UButton
+                  icon="i-lucide-trash-2"
+                  variant="ghost"
+                  color="error"
+                  @click="handleDeleteArticle"
+                >
+                  删除
+                </UButton>
+              </template>
+
+              <!-- 通用操作 -->
+              <UButton
+                :icon="isLiked ? 'i-lucide-heart' : 'i-lucide-heart-off'"
+                :color="isLiked ? 'primary' : 'neutral'"
+                :variant="isLiked ? 'solid' : 'outline'"
+                :loading="likeStatusLoading || likeMutationLoading"
+                @click="handleToggleLike"
+              >
+                {{ isLiked ? '已点赞' : '点赞' }}
+              </UButton>
+              <UButton icon="i-lucide-bookmark" variant="outline" color="neutral"> 收藏 </UButton>
+              <UButton icon="i-lucide-share-2" variant="outline" color="neutral"> 分享 </UButton>
+            </div>
+
+            <!-- 移动端下拉菜单 -->
+            <div class="md:hidden">
+              <UDropdownMenu :items="dropdownItems" mode="click">
+                <UButton icon="i-lucide-more-vertical" variant="ghost" color="neutral" />
+              </UDropdownMenu>
+            </div>
+          </div>
         </div>
-        <div class="flex flex-wrap items-center gap-2">
-          <UButton
-            :icon="isLiked ? 'i-lucide-heart' : 'i-lucide-heart-off'"
-            :color="isLiked ? 'primary' : 'neutral'"
-            :variant="isLiked ? 'solid' : 'outline'"
-            :loading="likeStatusLoading || likeMutationLoading"
-            @click="handleToggleLike"
-          >
-            {{ isLiked ? '已点赞' : '点赞' }}
-          </UButton>
-          <UButton icon="i-lucide-bookmark" variant="outline" color="neutral">收藏</UButton>
-          <UButton icon="i-lucide-share-2" variant="outline" color="neutral">分享</UButton>
-          <UButton
-            icon="i-lucide-message-circle"
-            variant="soft"
-            color="primary"
-            @click="scrollToComments"
-          >
-            {{ commentCount > 0 ? `评论 (${commentCount})` : '评论' }}
-          </UButton>
-        </div>
-      </div>
+      </UContainer>
     </div>
 
-    <div class="container mx-auto pt-6 pb-32">
+    <!-- Article Content -->
+    <div class="pt-24 pb-6">
       <div v-if="pending" class="space-y-6">
         <USkeleton class="h-12 w-full" />
         <div class="flex flex-wrap gap-4">

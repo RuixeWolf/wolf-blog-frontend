@@ -1,5 +1,5 @@
-import { ApiError } from '../../shared/types/ApiError'
-import { filterUndefinedFields, optionalField } from '../../shared/utils/data-process'
+import { ApiError } from '~~/shared/types/ApiError'
+import { filterUndefinedFields, optionalField } from '~~/shared/utils/data-process'
 
 /** 用户登录 */
 export async function login(data: User.LoginRequest): Promise<User.LoginResponse> {

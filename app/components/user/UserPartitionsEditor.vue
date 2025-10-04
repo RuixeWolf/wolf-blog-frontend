@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ApiError } from '~~/shared/types/ApiError'
 import { computed, reactive, ref, toRefs } from 'vue'
 import {
   createArticlePartition,
@@ -6,7 +7,6 @@ import {
   deleteArticlePartitionCascade,
   patchArticlePartition
 } from '@/apis/article/partition'
-import { ApiError } from '../../../shared/types/ApiError'
 
 interface PartitionRow {
   partition: Article.Partition

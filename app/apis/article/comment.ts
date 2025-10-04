@@ -1,5 +1,5 @@
-import { ApiError } from '../../../shared/types/ApiError'
-import { filterUndefinedFields, optionalField } from '../../../shared/utils/data-process'
+import { ApiError } from '~~/shared/types/ApiError'
+import { filterUndefinedFields, optionalField } from '~~/shared/utils/data-process'
 
 /** 文章评论相关 API */
 

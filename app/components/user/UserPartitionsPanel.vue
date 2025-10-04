@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // 导入必要的 API 和工具
+import { ApiError } from '~~/shared/types/ApiError'
 import { patchArticlePartition } from '@/apis/article/partition'
-import { ApiError } from '../../../shared/types/ApiError'
 import UserPartitionsEditor from './UserPartitionsEditor.vue'
 import UserPartitionsList from './UserPartitionsList.vue'
 

@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import { createArticle, patchArticle } from '~/apis/article'
 import { ARTICLE_VISIBILITY_OPTIONS } from '~~/shared/constants/article'
+import { MdEditor } from 'md-editor-v3'
 import type { HistoryState } from 'vue-router'
 
 /** NuxtUI Toast */

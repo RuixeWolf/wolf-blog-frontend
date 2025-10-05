@@ -334,6 +334,14 @@ function goToNewArticle() {
                 <USkeleton class="h-4 w-4 rounded" />
                 <USkeleton class="h-4 w-12" />
               </div>
+              <div class="flex items-center gap-1">
+                <USkeleton class="h-4 w-4 rounded" />
+                <USkeleton class="h-4 w-10" />
+              </div>
+              <div class="flex items-center gap-1">
+                <USkeleton class="h-4 w-4 rounded" />
+                <USkeleton class="h-4 w-8" />
+              </div>
             </div>
           </UCard>
         </div>
@@ -381,6 +389,14 @@ function goToNewArticle() {
                     <div v-if="article.postTime" class="flex items-center gap-1">
                       <UIcon name="i-lucide-calendar" class="h-4 w-4" />
                       <span>{{ formatDateTime(article.postTime, 'YYYY-MM-DD HH:mm') }}</span>
+                    </div>
+                    <div class="flex items-center gap-1">
+                      <UIcon name="i-lucide-eye" class="h-4 w-4" />
+                      <span>{{ article.views }}</span>
+                    </div>
+                    <div class="flex items-center gap-1">
+                      <UIcon name="i-lucide-thumbs-up" class="h-4 w-4" />
+                      <span>{{ article.likeCount }}</span>
                     </div>
                   </div>
                 </NuxtLink>

@@ -52,6 +52,26 @@ async function handleLogout(): Promise<void> {
   await currentUser.logout()
   navigateTo('/user/login', { replace: true })
 }
+
+/** 移动端菜单项配置 */
+const mobileMenuItems = computed<NavigationMenuItem[]>(() => [
+  ...centerNavigationMenu.value,
+  ...rightNavigationMenu.value.filter((item) => !item.slot), // 排除有 slot 的项
+  ...(currentUser.isLoggedIn
+    ? [
+        {
+          label: '个人资料',
+          to: `/user/${currentUser.userInfo?.id}`,
+          icon: 'lucide:user'
+        },
+        {
+          label: '设置',
+          to: '/user/settings',
+          icon: 'lucide:settings'
+        }
+      ]
+    : [])
+])
 </script>
 
 <template>
@@ -69,8 +89,12 @@ async function handleLogout(): Promise<void> {
 
     <!-- 右侧：关于按钮、颜色模式选择器、用户菜单 -->
     <template #right>
-      <UColorModeSelect variant="ghost" />
-      <UNavigationMenu :items="rightNavigationMenu" content-orientation="vertical">
+      <UColorModeSelect variant="ghost" class="hidden lg:flex" />
+      <UNavigationMenu
+        :items="rightNavigationMenu"
+        content-orientation="vertical"
+        class="hidden lg:flex"
+      >
         <!-- 用户下拉菜单 -->
         <template #user-content>
           <div>
@@ -118,6 +142,41 @@ async function handleLogout(): Promise<void> {
           </div>
         </template>
       </UNavigationMenu>
+    </template>
+
+    <!-- 移动端菜单主体 -->
+    <template #body>
+      <!-- 如果登录了，显示用户信息 -->
+      <div v-if="currentUser.isLoggedIn" class="mb-4">
+        <UUser
+          :name="currentUser.userInfo?.username"
+          :description="currentUser.userInfo?.account"
+          :avatar="{
+            src: currentUser.userInfo?.avatar ?? undefined,
+            alt: currentUser.userInfo?.username
+          }"
+          size="lg"
+          class="p-4"
+        />
+        <USeparator orientation="horizontal" />
+      </div>
+
+      <UNavigationMenu :items="mobileMenuItems" orientation="vertical" class="-mx-2.5" />
+      <!-- 如果登录了，添加退出登录按钮 -->
+      <div
+        v-if="currentUser.isLoggedIn"
+        class="mt-4 border-t border-gray-200 pt-4 dark:border-gray-700"
+      >
+        <UButton
+          variant="ghost"
+          color="error"
+          icon="i-lucide-log-out"
+          class="w-full justify-start"
+          @click="handleLogout()"
+        >
+          退出登录
+        </UButton>
+      </div>
     </template>
   </UHeader>
 </template>

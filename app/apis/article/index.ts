@@ -56,12 +56,14 @@ export async function createArticle(
   const { $api } = useNuxtApp()
   const body = filterUndefinedFields({
     title: String(data.title),
-    primary: String(data.primary),
+    primary: optionalField(data.primary, String),
     content: String(data.content),
     partitionId: optionalField(data.partitionId, Number),
-    tags: Array.isArray(data.tags) ? data.tags.map(String) : [],
-    comUseTags: Array.isArray(data.comUseTags) ? data.comUseTags.map(Number) : [],
-    visibility: Number(data.visibility) as 0 | 1
+    tags: optionalField(data.tags, (tags) => (Array.isArray(tags) ? tags.map(String) : null)),
+    comUseTags: optionalField(data.comUseTags, (comUseTags) =>
+      Array.isArray(comUseTags) ? comUseTags.map(Number) : null
+    ),
+    visibility: optionalField(data.visibility, Number) as 0 | 1 | undefined
   })
   const response = await $api<ApiResponse<Article.ArticleDetail>>('/article', {
     method: 'POST',

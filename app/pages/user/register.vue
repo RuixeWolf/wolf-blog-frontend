@@ -9,7 +9,10 @@ const currentUser = useCurrentUser()
 // 定义验证 schema
 const registerSchema = z
   .object({
-    username: z.string().min(1, '请输入用户名').min(3, '用户名至少3个字符'),
+    username: z
+      .string()
+      .min(3, '用户名至少3个字符')
+      .regex(/^[a-zA-Z0-9]+$/, '用户名只能包含字母和数字'),
     email: z.email('请输入有效的邮箱地址'),
     password: z.string().min(1, '请输入密码').min(6, '密码至少6个字符'),
     confirmPassword: z.string().min(1, '请确认密码')

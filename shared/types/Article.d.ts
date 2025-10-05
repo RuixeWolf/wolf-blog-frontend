@@ -18,6 +18,8 @@ declare namespace Article {
      * - `1` - 私密
      */
     visibility: 0 | 1
+    /** 点赞数 */
+    likeCount: number
     /** 作者信息 */
     author: Pick<User.UserInfo, 'id' | 'account' | 'nickname' | 'avatar' | 'personalStatus'>
   }
@@ -78,8 +80,8 @@ declare namespace Article {
   type ArticleQueryResult = ApiPageData<ArticleQueryRecord>
 
   /** 创建文章请求数据 */
-  type CreateArticleRequest = Pick<ArticleDetail, 'title' | 'primary' | 'content'> &
-    Partial<Pick<ArticleDetail, 'tags' | 'comUseTags' | 'visibility' | 'partitionId'>>
+  type CreateArticleRequest = Pick<ArticleDetail, 'title' | 'content'> &
+    Partial<Pick<ArticleDetail, 'primary' | 'tags' | 'comUseTags' | 'visibility' | 'partitionId'>>
 
   /** 增量更新文章请求数据 */
   type PatchArticleRequest = Pick<ArticleDetail, 'id'> & Partial<CreateArticleRequest>

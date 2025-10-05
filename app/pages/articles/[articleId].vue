@@ -530,6 +530,10 @@ onUnmounted(() => {
                   <span>{{ formatDateTime(article.postTime, 'YYYY-MM-DD HH:mm') }}</span>
                 </div>
                 <div class="flex items-center gap-2">
+                  <UIcon name="i-lucide-eye" class="h-4 w-4" />
+                  <span>{{ article.views }} 浏览</span>
+                </div>
+                <div class="flex items-center gap-2">
                   <UIcon name="i-lucide-user" class="h-4 w-4" />
                   <ULink :to="`/user/${article.author.id}`"
                     >作者: {{ article.author.nickname ?? article.author.account }}</ULink

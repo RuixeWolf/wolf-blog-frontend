@@ -4,3 +4,36 @@
 :root {
   --ui-header-height: 5rem;
 }
+
+/* md-editor-v3 列表样式修复 */
+.md-editor-preview ol {
+  list-style-type: decimal !important;
+}
+
+.md-editor-preview ul {
+  list-style-type: disc !important;
+}
+
+.md-editor-preview ol ol {
+  list-style-type: lower-alpha !important;
+}
+
+.md-editor-preview ul ul {
+  list-style-type: circle !important;
+}
+
+.md-editor ol {
+  list-style-type: decimal !important;
+}
+
+.md-editor ul {
+  list-style-type: disc !important;
+}
+
+.md-editor ol ol {
+  list-style-type: lower-alpha !important;
+}
+
+.md-editor ul ul {
+  list-style-type: circle !important;
+}

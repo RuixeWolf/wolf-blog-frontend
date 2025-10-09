@@ -10,6 +10,7 @@ const props = defineProps<{
 const toast = useToast()
 
 const pageNumber = ref(1)
+
 /**
  * 计算当前分页大小，默认 10 条。
  */
@@ -81,19 +82,27 @@ function handlePageChange(page: number) {
       </UButton>
     </div>
 
-    <div v-if="pending" class="grid gap-4 md:grid-cols-2">
-      <USkeleton v-for="index in 4" :key="index" class="h-32 w-full" />
+    <div v-if="pending" class="space-y-2">
+      <USkeleton v-for="index in 4" :key="index" class="h-16 w-full" />
     </div>
 
-    <div v-else-if="articles.length" class="grid gap-4 md:grid-cols-2">
-      <UCard
+    <div v-else-if="articles.length" class="space-y-2">
+      <NuxtLink
         v-for="article in articles"
         :key="article.id"
-        class="h-full transition hover:shadow-lg"
         :to="`/articles/${article.id}`"
+        class="block"
       >
-        <div class="flex flex-col gap-2">
-          <div class="flex items-center justify-between gap-2">
+        <div
+          class="flex items-center justify-between rounded border border-gray-200 p-4 transition hover:shadow-md"
+        >
+          <div class="flex-1">
+            <h4 class="text-base font-semibold">{{ article.title }}</h4>
+            <p class="text-sm text-gray-600 dark:text-gray-300">
+              {{ 'primary' in article && article.primary ? article.primary : '暂无摘要' }}
+            </p>
+          </div>
+          <div class="ml-4 flex items-center gap-2">
             <UBadge color="primary" variant="subtle">
               浏览 {{ (article as Article.ArticleInfo).views ?? 0 }}
             </UBadge>
@@ -101,12 +110,8 @@ function handlePageChange(page: number) {
               {{ article.postTime }}
             </span>
           </div>
-          <h4 class="line-clamp-2 text-base font-semibold">{{ article.title }}</h4>
-          <p class="line-clamp-3 text-sm text-gray-600 dark:text-gray-300">
-            {{ 'primary' in article && article.primary ? article.primary : '暂无摘要' }}
-          </p>
         </div>
-      </UCard>
+      </NuxtLink>
     </div>
 
     <UAlert v-else variant="subtle" color="neutral" icon="i-lucide-info"> 尚无公开文章 </UAlert>

@@ -294,18 +294,6 @@ const combinedRefreshing = computed(
     ownerArticlesPending.value ||
     (isSelf.value && (partitionsPending.value || commentsPending.value))
 )
-
-/**
- * 统一刷新当前页面的全部数据源。
- */
-function handleRefreshAll() {
-  refreshUserInfo()
-  refreshOwnerArticles()
-  if (isSelf.value) {
-    refreshPartitions()
-    void reloadComments()
-  }
-}
 </script>
 
 <template>
@@ -321,18 +309,6 @@ function handleRefreshAll() {
     </UAlert>
 
     <template v-else>
-      <div class="flex justify-end">
-        <UButton
-          icon="i-lucide-refresh-cw"
-          variant="ghost"
-          color="neutral"
-          :loading="combinedRefreshing"
-          @click="handleRefreshAll"
-        >
-          刷新页面数据
-        </UButton>
-      </div>
-
       <UserProfileOverview
         :user="profileUserInfo"
         :is-self="isSelf"
@@ -344,18 +320,11 @@ function handleRefreshAll() {
         v-if="tabItems.length"
         v-model="activeTab"
         :items="tabItems"
-        orientation="vertical"
+        orientation="horizontal"
         :unmount-on-hide="false"
         variant="pill"
         size="md"
         class="w-full"
-        :ui="{
-          root: 'flex flex-col gap-4 lg:grid lg:grid-cols-[15rem_1fr] lg:items-start lg:gap-6',
-          list: 'flex flex-row gap-2 overflow-x-auto rounded-lg border border-muted-200 bg-white/70 p-2 shadow-sm dark:border-muted-800 dark:bg-muted-900/60 lg:flex-col lg:overflow-visible lg:self-start',
-          trigger:
-            'flex-1 whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium transition-none focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 data-[state=active]:bg-primary-500 data-[state=active]:text-white dark:data-[state=active]:bg-primary-400 dark:data-[state=active]:text-gray-900',
-          content: 'flex-1'
-        }"
       >
         <template #content="{ item }">
           <template v-if="item.value === 'articles'">

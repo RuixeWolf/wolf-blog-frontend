@@ -4,14 +4,14 @@
 
 - Nuxt 4 + TypeScript app (see `nuxt.config.ts`) with modules: `@nuxt/ui`, `@pinia/nuxt`, `@vueuse/nuxt`, `@nuxthub/core`. UI shell lives in `app/layouts/default.vue` with navigation in `app/components/NavigationMenuHeader.vue`.
 - Runtime API endpoints come from `runtimeConfig.public.apiBaseClient` (browser) and `apiBaseServer` (SSR); populate them via `.env.development` / `.env.production` before running scripts.
-- Tailwind utilities are provided through Nuxt UI; custom tokens live in `app/app.config.ts` and `app/assets/css/main.css`.
+- Tailwind utilities are provided through Nuxt UI; custom tokens live in `app/app.config.ts` (sky primary color) and `app/assets/css/main.css`.
 
 ## API contract & data flow
 
 - `app/plugins/api.ts` wraps `$fetch` with token injection, optional TLS disabling for dev, and ensures every reply is an `ApiResponse<T>` object; HTTP 4xx/5xx never throw.
 - Component data fetching should use `useApi()` (`app/composables/useApi.ts`) to get `success`, `message`, and `refresh` refs; it swaps in `useNuxtApp().$api` automatically.
 - For imperative mutations, call helpers in `app/apis/**`; they coerce payloads, invoke `$api`, then throw `ApiError` (`shared/types/ApiError.ts`) when `response.success` is false so callers can `try/catch`.
-- Optional fields use `application/nullable+json` Content-Type; see `app/apis/article/index.ts` for examples.
+- Optional fields use `application/nullable+json` Content-Type; see `app/apis/article/index.ts` for examples with `optionalField` and `filterUndefinedFields`.
 
 ## Types & utilities
 
@@ -30,7 +30,7 @@
 - List pages (e.g. `app/pages/index.vue`) keep a `reactive` query object, watch for deep changes, and rely on `UPagination`; debounce search with `setTimeout`.
 - Form/edit pages (`app/pages/articles/edit/[[articleId]].vue`) load data with `useApi`, mirror it into `reactive` form state, and submit via the `app/apis/article` functions, using `md-editor-v3` for content and Nuxt UI form pieces.
 - Detail views (`app/pages/articles/[articleId].vue`) pair `MdPreview/MdCatalog` with Nuxt UI skeletons and error cards; follow the same success/refresh checks when adding new views.
-- History state caching: Use `window.history.state` to cache article data during navigation (see `app/pages/articles/[articleId].vue`).
+- History state caching: Use `window.history.state` to cache article data during navigation (see `app/pages/articles/[articleId].vue` `consumeArticleDetailFromHistory`).
 
 ## Component patterns
 
@@ -43,6 +43,7 @@
 
 - Scripts (see `package.json`): `pnpm dev --host --dotenv .env.development`, `pnpm build --dotenv .env.production`, `pnpm preview`, `pnpm typecheck` (`nuxt prepare` + `vue-tsc`), `pnpm lint` (ESLint via `@nuxt/eslint`), `pnpm format` (Prettier with import + Tailwind sorting).
 - `nuxt prepare` is already hooked via `postinstall`, but run it manually if path aliases fail after dependency changes.
+- Backend API documentation in `BACKEND_API.md` with unified `ApiResponse<T>` format.
 
 ## Implementation tips
 
@@ -51,3 +52,4 @@
 - When adding icons, use the `i-lucide-*` convention supported by Nuxt UI and the `@iconify-json/lucide` package.
 - For client-only features, check `import.meta.client` before accessing browser APIs.
 - Use `computed` for derived state and `watch` for side effects; prefer reactive patterns over imperative DOM manipulation.
+- API payloads: Use `optionalField` for nullable fields, `filterUndefinedFields` to clean objects before sending.

@@ -1,55 +1,45 @@
-# Wolf Blog Frontend - AI Coding Instructions
+# Wolf Blog Frontend – AI Coding Instructions
 
-## Quick map
+## Snapshot
 
-- Nuxt 4 + TypeScript app (see `nuxt.config.ts`) with modules: `@nuxt/ui`, `@pinia/nuxt`, `@vueuse/nuxt`, `@nuxthub/core`. UI shell lives in `app/layouts/default.vue` with navigation in `app/components/NavigationMenuHeader.vue`.
-- Runtime API endpoints come from `runtimeConfig.public.apiBaseClient` (browser) and `apiBaseServer` (SSR); populate them via `.env.development` / `.env.production` before running scripts.
-- Tailwind utilities are provided through Nuxt UI; custom tokens live in `app/app.config.ts` (sky primary color) and `app/assets/css/main.css`.
+- Nuxt 4 + TypeScript app composed via `app/layouts/default.vue`; layout reserves header height using `--ui-header-height` defined in `app/assets/css/main.css`.
+- Custom icon sprites in `app/assets/icons` registered as `app-icons:*` through `nuxt.config.ts`; Nuxt UI theme tuned in `app/app.config.ts` (primary sky palette).
 
-## API contract & data flow
+## Runtime & Config
 
-- `app/plugins/api.ts` wraps `$fetch` with token injection, optional TLS disabling for dev, and ensures every reply is an `ApiResponse<T>` object; HTTP 4xx/5xx never throw.
-- Component data fetching should use `useApi()` (`app/composables/useApi.ts`) to get `success`, `message`, and `refresh` refs; it swaps in `useNuxtApp().$api` automatically.
-- For imperative mutations, call helpers in `app/apis/**`; they coerce payloads, invoke `$api`, then throw `ApiError` (`shared/types/ApiError.ts`) when `response.success` is false so callers can `try/catch`.
-- Optional fields use `application/nullable+json` Content-Type; see `app/apis/article/index.ts` for examples with `optionalField` and `filterUndefinedFields`.
+- Runtime API endpoints come from `runtimeConfig.public.{apiBase,apiBaseClient,apiBaseServer}`; `.env.development` / `.env.production` provide `NUXT_PUBLIC_*` aliases.
+- Global CSS imports Tailwind + Nuxt UI + `md-editor-v3` styles; `pnpm dev --host --dotenv .env.development` serves at :3000.
 
-## Types & utilities
+## API Access Pattern
 
-- Domain types live in `shared/types/*.d.ts` as global namespaces (`Article.*`, `User.*`, `ApiResponse`, `ApiListData`) so you rarely need manual imports.
-- Reuse `optionalField` and `filterUndefinedFields` from `shared/utils/data-process.ts` when building payloads to avoid leaking `undefined` into the API.
-- See `shared/constants/article.ts` for visibility options and other enums.
+- `app/plugins/api.ts` wraps `$fetch` so HTTP 4xx/5xx resolve to `ApiResponse`; it injects `Authorization` from the `auth_token` cookie and clears state on `UN_LOGIN` / `AUTH_FAILED`.
+- Prefer `useApi` from `app/composables/useApi.ts` for queries: it auto-wires `$api` and exposes `success/code/message/data` computed refs.
+- Imperative mutations live in `app/apis/**`; each coalesces payloads with `optionalField` + `filterUndefinedFields`, sets `application/nullable+json` when nulls allowed, and throws `ApiError` on `!response.success`.
 
-## Auth flow
+## Auth & User
 
-- `useCurrentUser` (`app/stores/user.ts`) owns the cookie (`auth_token`), exposes `login/logout/refresh`, and auto-initializes on client mount. Always go through the store instead of hitting auth APIs directly.
-- The API plugin clears auth state and redirects (via the store) when backend codes `UN_LOGIN` or `AUTH_FAILED`; avoid duplicating this logic in components.
-- Login redirects preserve return path: `?redirect=${encodeURIComponent(route.fullPath)}`
+- `useCurrentUser` (`app/stores/user.ts`) is the single source of auth: it manages the `auth_token` cookie, refreshes `userInfo`, and exposes `isLoggedIn/login/logout/refresh`.
+- Store initialization is client-only via `nextTick(initializeUser)`; whenever you change auth flows, preserve this SSR-safe pattern.
 
-## Page patterns
+## Page Conventions
 
-- List pages (e.g. `app/pages/index.vue`) keep a `reactive` query object, watch for deep changes, and rely on `UPagination`; debounce search with `setTimeout`.
-- Form/edit pages (`app/pages/articles/edit/[[articleId]].vue`) load data with `useApi`, mirror it into `reactive` form state, and submit via the `app/apis/article` functions, using `md-editor-v3` for content and Nuxt UI form pieces.
-- Detail views (`app/pages/articles/[articleId].vue`) pair `MdPreview/MdCatalog` with Nuxt UI skeletons and error cards; follow the same success/refresh checks when adding new views.
-- History state caching: Use `window.history.state` to cache article data during navigation (see `app/pages/articles/[articleId].vue` `consumeArticleDetailFromHistory`).
+- Lists (`app/pages/index.vue`) keep a `reactive<ArticleListQuery>` and mutate it in-place; watchers debounce search (`setTimeout`), convert dates to ISO, and rely on `UPagination`.
+- Detail view (`app/pages/articles/[articleId].vue`) uses `useAsyncData` with a route-based cache: `consumeArticleDetailFromHistory` pulls page state before calling `getArticleDetail`, so maintain the `history.replaceState` clears when refreshing.
+- Editors (`app/pages/articles/edit/[[articleId]].vue`) mirror API data into reactive form state and submit via `createArticle/patchArticle`; `md-editor-v3` components expect global CSS already imported.
 
-## Component patterns
+## UI & Components
 
-- Navigation menu: SSR-safe conditional rendering based on auth state (`app/components/NavigationMenuHeader.vue`).
-- Toolbar visibility: Scroll-based show/hide with threshold logic (see article detail page).
-- Form validation: Reactive form state with imperative submission; use `toast.add()` for user feedback.
-- Loading states: Combine `pending`, `success`, and error states with Nuxt UI skeletons/cards.
+- Header navigation (`app/components/NavigationMenuHeader.vue`) renders SSR-safe menus based on `useCurrentUser`; any new auth-aware UI should reuse the store to avoid hydration drift.
+- Toast feedback uses `useToast().add({ title, description, color })`; follow existing success/neutral/error color choices for consistency.
 
-## Workflows & quality gates
+## Types & Utilities
 
-- Scripts (see `package.json`): `pnpm dev --host --dotenv .env.development`, `pnpm build --dotenv .env.production`, `pnpm preview`, `pnpm typecheck` (`nuxt prepare` + `vue-tsc`), `pnpm lint` (ESLint via `@nuxt/eslint`), `pnpm format` (Prettier with import + Tailwind sorting).
-- `nuxt prepare` is already hooked via `postinstall`, but run it manually if path aliases fail after dependency changes.
-- Backend API documentation in `BACKEND_API.md` with unified `ApiResponse<T>` format.
+- Domain types are declared globally in `shared/types/*.d.ts` (e.g., `Article.*`, `User.*`); avoid importing them manually.
+- `shared/utils/data-process.ts` (`optionalField`, `filterUndefinedFields`) is the canonical way to strip `undefined` while preserving `null`.
+- `ApiError` (`shared/types/ApiError.ts`) carries `code`/`data`; catch it in components to surface backend messages.
 
-## Implementation tips
+## Workflows
 
-- Prefer `useApiRaw` only when you need manual control of `transform` or headers; otherwise stick to the higher-level helpers.
-- Keep new stores small and Pinia-based, mirroring the pattern in `app/stores/user.ts`.
-- When adding icons, use the `i-lucide-*` convention supported by Nuxt UI and the `@iconify-json/lucide` package.
-- For client-only features, check `import.meta.client` before accessing browser APIs.
-- Use `computed` for derived state and `watch` for side effects; prefer reactive patterns over imperative DOM manipulation.
-- API payloads: Use `optionalField` for nullable fields, `filterUndefinedFields` to clean objects before sending.
+- `pnpm typecheck` runs `nuxt prepare` + `vue-tsc`; run after touching `shared/types` or route components.
+- `pnpm lint` uses `@nuxt/eslint` with auto-fix; `pnpm format` applies Prettier with import + Tailwind sorting.
+- If aliases misbehave after dependency changes, re-run `pnpm nuxt prepare` (also triggered postinstall).

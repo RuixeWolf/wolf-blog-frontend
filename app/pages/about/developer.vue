@@ -13,8 +13,6 @@ interface Developer {
   avatarUrl?: string
   /** 邮箱 */
   email?: string
-  /** 电话 */
-  phone?: string
   /** GitHub */
   github?: string
 }
@@ -22,12 +20,12 @@ interface Developer {
 /** 开发者列表 */
 const DEVELOPERS: Developer[] = [
   {
-    userId: '1',
+    userId: '10001',
     name: 'Rylin Wolf · 夜凌',
     role: '后端开发',
     description: '负责网站的后端开发与维护，以及服务器的管理与运维。',
     email: 'zhangsan@example.com',
-    github: 'https://github.com/RylinWolf'
+    github: 'https://avatars.githubusercontent.com/u/66715948'
   },
   {
     userId: '10007',
@@ -36,7 +34,7 @@ const DEVELOPERS: Developer[] = [
     avatarUrl:
       'https://gravatar.com/avatar/58917ffeb8f71e356c579b3f7d84fd92646e4b6514739a873f7ad93f0e8b8ace?size=512&d=initials',
     description: '负责网站的前端开发与维护。',
-    email: 'zhangsan@example.com',
+    email: 'RuixeWolf@outlook.com',
     github: 'https://github.com/RuixeWolf'
   },
   {
@@ -54,7 +52,7 @@ const DEVELOPERS: Developer[] = [
     <div
       v-for="developer in DEVELOPERS"
       :key="developer.userId"
-      class="bg-elevated mt-6 flex w-full flex-row gap-6 rounded-lg p-6 shadow transition first:mt-0 hover:shadow-lg"
+      class="mt-6 flex w-full flex-row gap-6 rounded-lg bg-[var(--ui-bg)] p-6 shadow transition first:mt-0 hover:shadow-lg"
     >
       <!-- 头像 -->
       <UAvatar
@@ -67,19 +65,24 @@ const DEVELOPERS: Developer[] = [
       <div class="flex h-30 flex-grow flex-col items-start justify-between">
         <div>
           <div class="flex flex-row items-center gap-4">
+            <NuxtLink class="text-2xl font-bold" :to="`/user/${developer.userId}`">{{
+              developer.name
+            }}</NuxtLink>
             <UBadge variant="subtle" color="info" icon="lucide:user">
               {{ developer.role }}
             </UBadge>
-            <div class="text-2xl font-bold">{{ developer.name }}</div>
           </div>
           <div class="mt-2 text-[var(--ui-text-muted)]">
             {{ developer.description }}
           </div>
         </div>
         <div class="mt-4 flex flex-row items-center gap-3 text-xl text-[var(--ui-text-muted)]">
-          <UIcon v-if="developer.email" name="lucide:mail" />
-          <UIcon v-if="developer.phone" name="lucide:phone" />
-          <UIcon v-if="developer.github" name="lucide:github" />
+          <a v-if="developer.email" :href="`mailto:${developer.email}`" target="_blank">
+            <UIcon name="lucide:mail" class="cursor-pointer" />
+          </a>
+          <a v-if="developer.github" :href="developer.github" target="_blank">
+            <UIcon name="lucide:github" class="cursor-pointer" />
+          </a>
         </div>
       </div>
       <!-- 网站 Logo -->

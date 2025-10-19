@@ -7,6 +7,11 @@ export default defineAppConfig({
       slots: {
         base: 'cursor-pointer'
       }
+    },
+    select: {
+      slots: {
+        base: 'cursor-pointer'
+      }
     }
   }
 })

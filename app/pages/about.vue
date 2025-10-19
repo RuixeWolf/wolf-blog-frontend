@@ -13,6 +13,11 @@ const route = useRoute()
 if (route.path === '/about') {
   navigateTo('/about/about-us')
 }
+
+/** 页面标题 */
+useHead({
+  title: 'Wolf Blog - 关于'
+})
 </script>
 
 <template>

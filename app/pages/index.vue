@@ -156,46 +156,22 @@ function goToNewArticle() {
 </script>
 
 <template>
-  <div class="mx-auto max-w-7xl px-4 py-6">
-    <!-- 页面标题和操作 -->
-    <div class="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-      <div>
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">文章列表</h1>
-        <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">发现精彩内容，探索更多观点</p>
-      </div>
-
-      <!-- 新建文章按钮 -->
-      <UButton icon="i-lucide-plus" color="primary" variant="solid" @click="goToNewArticle">
-        写文章
-      </UButton>
-    </div>
-
-    <!-- 搜索和筛选区域 -->
-    <div class="mb-6 space-y-3">
-      <!-- 主要搜索栏 -->
-      <div class="flex flex-col gap-3 md:flex-row">
-        <div class="flex-1">
+  <div class="max-w-7xl py-6">
+    <div class="flex flex-row gap-4">
+      <!-- 文章列表内容 -->
+      <div class="flex-grow">
+        <!-- 文章列表页头 -->
+        <div class="mb-6 flex w-full flex-row gap-2">
+          <!-- 搜索框 -->
           <UInput
             v-model="searchQuery"
             placeholder="搜索文章标题..."
             leading-icon="i-lucide-search"
-            size="md"
-          >
-            <template #trailing>
-              <UButton
-                v-if="searchQuery"
-                icon="i-lucide-x"
-                variant="ghost"
-                color="neutral"
-                size="xs"
-                @click="searchQuery = ''"
-              />
-            </template>
-          </UInput>
-        </div>
-
-        <div class="flex gap-2">
-          <!-- 排序方式 -->
+            size="xl"
+            class="flex-grow rounded-md bg-[var(--ui-bg)] shadow-lg"
+            variant="none"
+          />
+          <!-- 排序选择器 -->
           <USelect
             v-model="selectedSort"
             :items="sortOptions"
@@ -203,248 +179,308 @@ function goToNewArticle() {
             value-attribute="value"
             placeholder="排序"
             icon="i-lucide-arrow-up-down"
-            size="md"
-            class="w-36"
+            size="xl"
+            class="hover:bg-accented/75 flex-shrink-0 bg-[var(--ui-bg)] shadow-lg"
+            variant="none"
           />
+          <!-- 高级筛选 -->
+          <UPopover>
+            <UButton
+              icon="i-lucide-filter"
+              size="xl"
+              trailing-icon="i-lucide-chevron-down"
+              class="hover:bg-accented/75 flex-shrink-0 bg-[var(--ui-bg)] shadow-lg"
+              variant="soft"
+              color="neutral"
+            />
+            <template #content>
+              <div class="w-80 rounded-lg bg-[var(--ui-bg)] p-4 max-lg:right-auto lg:max-w-80">
+                <div class="mb-3 flex items-center justify-between">
+                  <h3 class="text-sm font-medium text-gray-900 dark:text-white">高级筛选</h3>
+                  <UButton icon="i-lucide-filter-x" variant="ghost" size="xs" @click="clearFilters">
+                    清除
+                  </UButton>
+                </div>
 
-          <!-- 高级筛选切换 -->
-          <div class="relative">
-            <UCollapsible>
-              <UButton
-                icon="i-lucide-filter"
-                variant="outline"
-                size="md"
-                trailing-icon="i-lucide-chevron-down"
-              />
-
-              <template #content>
-                <div
-                  class="absolute top-full right-0 z-10 mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-lg border bg-white p-4 shadow-lg max-lg:right-auto max-lg:left-0 lg:max-w-80 dark:bg-gray-800"
-                >
-                  <div class="mb-3 flex items-center justify-between">
-                    <h3 class="text-sm font-medium text-gray-900 dark:text-white">高级筛选</h3>
-                    <UButton
-                      icon="i-lucide-filter-x"
-                      variant="ghost"
-                      size="xs"
-                      @click="clearFilters"
-                    >
-                      清除
-                    </UButton>
+                <div class="space-y-3">
+                  <!-- 用户和分区筛选 -->
+                  <div class="grid grid-cols-2 gap-3">
+                    <UInput
+                      v-model.number="query.authorId"
+                      type="number"
+                      placeholder="作者ID"
+                      size="sm"
+                      :min="1"
+                    />
+                    <UInput
+                      v-model.number="query.partitionId"
+                      type="number"
+                      placeholder="分区ID"
+                      size="sm"
+                      :min="1"
+                    />
                   </div>
 
-                  <div class="space-y-3">
-                    <!-- 用户和分区筛选 -->
-                    <div class="grid grid-cols-2 gap-3">
-                      <UInput
-                        v-model.number="query.authorId"
-                        type="number"
-                        placeholder="作者ID"
-                        size="sm"
-                        :min="1"
-                      />
-                      <UInput
-                        v-model.number="query.partitionId"
-                        type="number"
-                        placeholder="分区ID"
-                        size="sm"
-                        :min="1"
-                      />
-                    </div>
-
-                    <!-- 日期范围筛选 -->
-                    <div class="space-y-2">
-                      <label class="text-xs font-medium text-gray-700 dark:text-gray-300">
-                        发布时间范围
-                      </label>
-                      <UCalendar
-                        v-model="dateRange"
-                        range
-                        size="sm"
-                        color="primary"
-                        class="w-full"
-                      />
-                    </div>
+                  <!-- 日期范围筛选 -->
+                  <div class="space-y-2">
+                    <label class="text-xs font-medium text-gray-700 dark:text-gray-300">
+                      发布时间范围
+                    </label>
+                    <UCalendar v-model="dateRange" range size="sm" color="primary" class="w-full" />
                   </div>
                 </div>
-              </template>
-            </UCollapsible>
-          </div>
-
-          <!-- 刷新按钮 -->
-          <UButton icon="i-lucide-refresh-cw" variant="ghost" size="md" @click="handleRefresh" />
+              </div>
+            </template>
+          </UPopover>
+          <!-- 分页大小 -->
+          <USelect
+            v-model="query.pageSize"
+            :items="[
+              { label: '10', value: 10 },
+              { label: '20', value: 20 },
+              { label: '50', value: 50 }
+            ]"
+            option-attribute="label"
+            value-attribute="value"
+            size="xl"
+            class="hover:bg-accented/75 flex-shrink-0 bg-[var(--ui-bg)] shadow-lg"
+            variant="none"
+          >
+            <template #default="{ modelValue }">
+              每页 <span class="text-primary">{{ modelValue }}</span> 条
+            </template>
+          </USelect>
+          <!-- 刷新 -->
+          <UButton
+            icon="i-lucide-refresh-cw"
+            size="xl"
+            class="flex-shrink-0 bg-[var(--ui-bg)] shadow-lg"
+            variant="soft"
+            color="neutral"
+            @click="handleRefresh"
+          />
         </div>
-      </div>
-    </div>
+        <!-- 加载状态骨架屏 -->
+        <div v-if="pending" class="space-y-4">
+          <div v-for="i in Math.min(query.pageSize || 20, 5)" :key="i" class="p-4">
+            <UCard class="p-4">
+              <!-- 文章标题骨架 -->
+              <USkeleton class="mb-3 h-6 w-3/4" />
 
-    <!-- 文章列表区域 -->
-    <UCard>
-      <template #header>
-        <div class="flex items-center justify-between py-2">
-          <div class="flex items-center gap-2">
-            <UIcon name="i-lucide-file-text" class="h-4 w-4 text-gray-500" />
-            <h2 class="text-base font-semibold">文章列表</h2>
-          </div>
-
-          <!-- 分页大小选择 -->
-          <div class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-            <span>每页</span>
-            <USelect
-              v-model="query.pageSize"
-              :items="[
-                { label: '10', value: 10 },
-                { label: '20', value: 20 },
-                { label: '50', value: 50 }
-              ]"
-              option-attribute="label"
-              value-attribute="value"
-              size="xs"
-              class="w-14"
-            />
-            <span>条</span>
-          </div>
-        </div>
-      </template>
-
-      <!-- 文章列表内容 -->
-      <!-- 加载状态骨架屏 -->
-      <div v-if="pending" class="space-y-4">
-        <div v-for="i in Math.min(query.pageSize || 20, 5)" :key="i" class="p-4">
-          <UCard class="p-4">
-            <!-- 文章标题骨架 -->
-            <USkeleton class="mb-3 h-6 w-3/4" />
-
-            <!-- 文章摘要骨架 -->
-            <div class="mb-4 space-y-2">
-              <USkeleton class="h-4 w-full" />
-              <USkeleton class="h-4 w-5/6" />
-            </div>
-
-            <!-- 文章信息骨架 -->
-            <div class="flex items-center gap-4">
-              <div class="flex items-center gap-1">
-                <USkeleton class="h-4 w-4 rounded" />
-                <USkeleton class="h-4 w-16" />
+              <!-- 文章摘要骨架 -->
+              <div class="mb-4 space-y-2">
+                <USkeleton class="h-4 w-full" />
+                <USkeleton class="h-4 w-5/6" />
               </div>
-              <div class="flex items-center gap-1">
-                <USkeleton class="h-4 w-4 rounded" />
-                <USkeleton class="h-4 w-24" />
-              </div>
-              <div class="flex items-center gap-1">
-                <USkeleton class="h-4 w-4 rounded" />
-                <USkeleton class="h-4 w-12" />
-              </div>
-              <div class="flex items-center gap-1">
-                <USkeleton class="h-4 w-4 rounded" />
-                <USkeleton class="h-4 w-10" />
-              </div>
-              <div class="flex items-center gap-1">
-                <USkeleton class="h-4 w-4 rounded" />
-                <USkeleton class="h-4 w-8" />
-              </div>
-            </div>
-          </UCard>
-        </div>
-      </div>
 
-      <!-- 错误状态 -->
-      <div v-else-if="status === 'error' && message" class="flex items-center justify-center py-8">
-        <UAlert
-          icon="i-lucide-alert-circle"
-          color="error"
-          variant="subtle"
-          :title="`加载文章列表失败 (错误码: ${code})`"
-          :description="message"
-        />
-      </div>
-
-      <!-- 文章列表内容 -->
-      <div v-else-if="success && articleList?.records && articleList.records.length > 0">
-        <ul class="space-y-4">
-          <li v-for="article in articleList.records" :key="article.id">
-            <UCard class="transition-shadow duration-200 hover:shadow-md">
-              <div>
-                <NuxtLink :to="`/articles/${article.id}`" class="group block">
-                  <h3
-                    class="group-hover:text-primary-600 text-lg font-semibold text-gray-900 transition-colors dark:text-white"
-                  >
-                    {{ article.title }}
-                  </h3>
-
-                  <div
-                    v-if="article.primary"
-                    class="mt-1 line-clamp-2 text-gray-600 dark:text-gray-300"
-                  >
-                    {{ article.primary }}
-                  </div>
-                  <div
-                    class="mt-2 flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400"
-                  >
-                    <div class="flex items-center gap-1">
-                      <UIcon name="i-lucide-user" class="h-4 w-4" />
-                      <ULink :to="`/user/${article.author?.id}`">{{
-                        article.author?.nickname ?? article.author?.account
-                      }}</ULink>
-                    </div>
-                    <div v-if="article.postTime" class="flex items-center gap-1">
-                      <UIcon name="i-lucide-calendar" class="h-4 w-4" />
-                      <span>{{ formatDateTime(article.postTime, 'YYYY-MM-DD HH:mm') }}</span>
-                    </div>
-                    <div class="flex items-center gap-1">
-                      <UIcon name="i-lucide-eye" class="h-4 w-4" />
-                      <span>{{ article.views }}</span>
-                    </div>
-                    <div class="flex items-center gap-1">
-                      <UIcon name="i-lucide-thumbs-up" class="h-4 w-4" />
-                      <span>{{ article.likeCount }}</span>
-                    </div>
-                  </div>
-                </NuxtLink>
+              <!-- 文章信息骨架 -->
+              <div class="flex items-center gap-4">
+                <div class="flex items-center gap-1">
+                  <USkeleton class="h-4 w-4 rounded" />
+                  <USkeleton class="h-4 w-16" />
+                </div>
+                <div class="flex items-center gap-1">
+                  <USkeleton class="h-4 w-4 rounded" />
+                  <USkeleton class="h-4 w-24" />
+                </div>
+                <div class="flex items-center gap-1">
+                  <USkeleton class="h-4 w-4 rounded" />
+                  <USkeleton class="h-4 w-12" />
+                </div>
+                <div class="flex items-center gap-1">
+                  <USkeleton class="h-4 w-4 rounded" />
+                  <USkeleton class="h-4 w-10" />
+                </div>
+                <div class="flex items-center gap-1">
+                  <USkeleton class="h-4 w-4 rounded" />
+                  <USkeleton class="h-4 w-8" />
+                </div>
               </div>
             </UCard>
-          </li>
-        </ul>
-
-        <!-- 分页信息和控件 -->
-        <div v-if="articleList.totalRow > 0" class="mt-8 space-y-4">
-          <!-- 分页信息 -->
-          <div class="flex items-center justify-center text-sm text-gray-600 dark:text-gray-400">
-            <span>
-              共 {{ articleList.totalRow }} 篇文章，第 {{ articleList.currentPage }} /
-              {{ articleList.totalPage }} 页 (每页 {{ query.pageSize || 20 }} 篇)
-            </span>
           </div>
+        </div>
 
-          <!-- 分页控件 -->
-          <div v-if="articleList.totalPage > 1" class="flex justify-center">
-            <UPagination
-              v-model:page="query.pageNumber"
-              :total="articleList.totalRow"
-              :items-per-page="query.pageSize || 20"
-              :sibling-count="1"
-              show-edges
-            />
+        <!-- 错误状态 -->
+        <div
+          v-else-if="status === 'error' && message"
+          class="flex items-center justify-center py-8"
+        >
+          <UAlert
+            icon="i-lucide-alert-circle"
+            color="error"
+            variant="subtle"
+            :title="`加载文章列表失败 (错误码: ${code})`"
+            :description="message"
+          />
+        </div>
+
+        <!-- 文章列表内容 -->
+        <div
+          v-else-if="success && articleList?.records && articleList.records.length > 0"
+          class="space-y-4"
+        >
+          <UCard
+            v-for="article in articleList.records"
+            :key="article.id"
+            class="shadow-lg transition-shadow duration-200 hover:shadow-xl"
+          >
+            <div>
+              <NuxtLink :to="`/articles/${article.id}`" class="group block">
+                <h3 class="text-lg font-semibold text-gray-900 transition-colors dark:text-white">
+                  {{ article.title }}
+                </h3>
+                <div
+                  v-if="article.primary"
+                  class="mt-1 line-clamp-2 text-gray-600 dark:text-gray-300"
+                >
+                  {{ article.primary }}
+                </div>
+                <div class="mt-2 flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
+                  <div class="flex items-center gap-1">
+                    <UIcon name="i-lucide-user" class="h-4 w-4" />
+                    <ULink :to="`/user/${article.author?.id}`">{{
+                      article.author?.nickname ?? article.author?.account
+                    }}</ULink>
+                  </div>
+                  <div v-if="article.postTime" class="flex items-center gap-1">
+                    <UIcon name="i-lucide-calendar" class="h-4 w-4" />
+                    <span>{{ formatDateTime(article.postTime, 'YYYY-MM-DD HH:mm') }}</span>
+                  </div>
+                  <div class="flex items-center gap-1">
+                    <UIcon name="i-lucide-eye" class="h-4 w-4" />
+                    <span>{{ article.views }}</span>
+                  </div>
+                  <div class="flex items-center gap-1">
+                    <UIcon name="i-lucide-thumbs-up" class="h-4 w-4" />
+                    <span>{{ article.likeCount }}</span>
+                  </div>
+                </div>
+              </NuxtLink>
+            </div>
+          </UCard>
+
+          <!-- 分页信息和控件 -->
+          <div v-if="articleList.totalRow > 0" class="mt-8 space-y-4">
+            <!-- 分页信息 -->
+            <div class="flex items-center justify-center text-sm text-gray-600 dark:text-gray-400">
+              <span>
+                共 {{ articleList.totalRow }} 篇文章，第 {{ articleList.currentPage }} /
+                {{ articleList.totalPage }} 页 (每页 {{ query.pageSize || 20 }} 篇)
+              </span>
+            </div>
+
+            <!-- 分页控件 -->
+            <div v-if="articleList.totalPage > 1" class="flex justify-center">
+              <UPagination
+                v-model:page="query.pageNumber"
+                :total="articleList.totalRow"
+                :items-per-page="query.pageSize || 20"
+                :sibling-count="1"
+                show-edges
+              />
+            </div>
           </div>
+        </div>
+
+        <div v-else class="flex flex-col items-center justify-center py-12">
+          <UIcon name="i-lucide-file-text" class="mb-4 h-12 w-12 text-gray-400" />
+          <h3 class="mb-2 text-lg font-medium text-gray-900 dark:text-white">暂无文章</h3>
+          <p class="mb-6 text-center text-gray-500 dark:text-gray-400">
+            还没有发布任何文章，快来创建第一篇文章吧！
+          </p>
+          <UButton icon="i-lucide-plus" color="primary" @click="goToNewArticle">
+            写第一篇文章
+          </UButton>
+        </div>
+
+        <!-- 返回顶部按钮 -->
+        <div class="mt-8 flex justify-center">
+          <UButton icon="i-lucide-arrow-up" variant="outline" color="neutral" @click="scrollToTop">
+            返回顶部
+          </UButton>
         </div>
       </div>
 
-      <div v-else class="flex flex-col items-center justify-center py-12">
-        <UIcon name="i-lucide-file-text" class="mb-4 h-12 w-12 text-gray-400" />
-        <h3 class="mb-2 text-lg font-medium text-gray-900 dark:text-white">暂无文章</h3>
-        <p class="mb-6 text-center text-gray-500 dark:text-gray-400">
-          还没有发布任何文章，快来创建第一篇文章吧！
-        </p>
-        <UButton icon="i-lucide-plus" color="primary" @click="goToNewArticle">
-          写第一篇文章
+      <!-- 个人名片、文章分类 -->
+      <div class="w-60 space-y-4">
+        <!-- 写文章 -->
+        <UButton
+          icon="i-lucide-edit"
+          color="primary"
+          variant="solid"
+          size="xl"
+          class="mb-6 w-60 justify-center shadow-lg"
+          @click="goToNewArticle"
+        >
+          写文章
         </UButton>
+        <!-- 个人信息 -->
+        <div class="rounded-lg bg-[var(--ui-bg)] p-4 shadow-lg">
+          <div class="flex w-full flex-col items-center">
+            <!-- 头像 -->
+            <UAvatar
+              :src="currentUser.userInfo?.avatar ?? undefined"
+              :alt="currentUser.userInfo?.username"
+              size="xl"
+              class="h-24 w-24 rounded-full text-center"
+            />
+            <!-- 用户名 -->
+            <div class="mt-2 text-center text-lg font-semibold text-gray-900 dark:text-white">
+              {{ currentUser.userInfo?.username || '游客' }}
+            </div>
+            <!-- 账号 -->
+            <div class="mt-1 text-center text-sm text-gray-500 dark:text-gray-400">
+              {{ currentUser.userInfo?.account || '未登录' }}
+            </div>
+            <!-- 个性签名 -->
+            <div
+              v-if="currentUser.userInfo?.personalStatus"
+              class="mt-2 text-center text-sm text-gray-600 dark:text-gray-300"
+            >
+              {{ currentUser.userInfo?.personalStatus }}
+            </div>
+            <!-- 个人快捷导航 -->
+            <div class="mt-3 flex w-full flex-row items-center justify-between">
+              <!-- 个人主页 -->
+              <UButton
+                icon="i-lucide-user-circle"
+                variant="ghost"
+                size="lg"
+                class="flex-grow justify-center"
+                color="neutral"
+                :to="currentUser.isLoggedIn ? `/user/${currentUser.userInfo?.id}` : '/user/login'"
+              />
+              <!-- 收藏 -->
+              <UButton
+                icon="i-lucide-bookmark"
+                variant="ghost"
+                size="lg"
+                class="flex-grow justify-center"
+                color="neutral"
+                :to="currentUser.isLoggedIn ? '/user/favorites' : '/user/login'"
+              />
+              <!-- 评论管理 -->
+              <UButton
+                icon="i-lucide-message-circle"
+                variant="ghost"
+                size="lg"
+                class="flex-grow justify-center"
+                color="neutral"
+                :to="currentUser.isLoggedIn ? '/user/comments' : '/user/login'"
+              />
+              <!-- 设置 -->
+              <UButton
+                icon="i-lucide-settings"
+                variant="ghost"
+                size="lg"
+                class="flex-grow justify-center"
+                color="neutral"
+                :to="currentUser.isLoggedIn ? '/user/settings' : '/user/login'"
+              />
+            </div>
+          </div>
+        </div>
       </div>
-    </UCard>
-
-    <!-- 返回顶部按钮 -->
-    <div class="mt-8 flex justify-center">
-      <UButton icon="i-lucide-arrow-up" variant="outline" color="neutral" @click="scrollToTop">
-        返回顶部
-      </UButton>
     </div>
   </div>
 </template>

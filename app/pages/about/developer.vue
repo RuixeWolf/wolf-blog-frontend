@@ -52,17 +52,17 @@ const DEVELOPERS: Developer[] = [
     <div
       v-for="developer in DEVELOPERS"
       :key="developer.userId"
-      class="mt-6 flex w-full flex-row gap-6 rounded-lg bg-[var(--ui-bg)] p-6 shadow transition first:mt-0 hover:shadow-lg"
+      class="bg-default mt-6 flex w-full flex-row gap-6 rounded-lg p-6 shadow transition first:mt-0 hover:shadow-lg"
     >
       <!-- 头像 -->
       <UAvatar
         :src="developer.avatarUrl"
         :alt="developer.name"
         size="lg"
-        class="h-30 w-30 flex-shrink-0 rounded"
+        class="h-30 w-30 shrink-0 rounded"
       />
       <!-- 内容 -->
-      <div class="flex h-30 flex-grow flex-col items-start justify-between">
+      <div class="flex h-30 grow flex-col items-start justify-between">
         <div>
           <div class="flex flex-row items-center gap-4">
             <NuxtLink class="text-2xl font-bold" :to="`/user/${developer.userId}`">{{
@@ -72,11 +72,11 @@ const DEVELOPERS: Developer[] = [
               {{ developer.role }}
             </UBadge>
           </div>
-          <div class="mt-2 text-[var(--ui-text-muted)]">
+          <div class="text-muted mt-2">
             {{ developer.description }}
           </div>
         </div>
-        <div class="mt-4 flex flex-row items-center gap-3 text-xl text-[var(--ui-text-muted)]">
+        <div class="text-muted mt-4 flex flex-row items-center gap-3 text-xl">
           <a v-if="developer.email" :href="`mailto:${developer.email}`" target="_blank">
             <UIcon name="lucide:mail" class="cursor-pointer" />
           </a>
@@ -86,8 +86,8 @@ const DEVELOPERS: Developer[] = [
         </div>
       </div>
       <!-- 网站 Logo -->
-      <div class="flex h-30 flex-shrink-0 items-center justify-center">
-        <UIcon name="app-icons:wolf-blog" class="text-[var(--ui-text-muted)]" size="60" />
+      <div class="flex h-30 shrink-0 items-center justify-center">
+        <UIcon name="app-icons:wolf-blog" class="text-muted" size="60" />
       </div>
     </div>
   </div>

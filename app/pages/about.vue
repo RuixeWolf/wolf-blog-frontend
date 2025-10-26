@@ -28,17 +28,17 @@ useHead({
         v-for="item in SIDEBAR_NAVIGATION_ITEMS"
         :key="item.path"
         :to="item.path"
-        class="bg-muted flex flex-row items-center justify-between rounded-lg px-4 py-2 text-lg font-medium text-[var(--ui-text-muted)] shadow transition hover:bg-[var(--ui-bg)] hover:text-[var(--ui-text)] hover:shadow-lg"
+        class="bg-muted text-muted hover:bg-default hover:text-default flex flex-row items-center justify-between rounded-lg px-4 py-2 text-lg font-medium shadow transition hover:shadow-lg"
         :class="{
-          'bg-[var(--ui-bg)]! text-[var(--ui-text)]! shadow-lg': $route.path === item.path
+          'bg-default! text-default! shadow-lg': $route.path === item.path
         }"
       >
-        <div class="flex-grow text-center">{{ item.title }}</div>
+        <div class="grow text-center">{{ item.title }}</div>
         <UIcon name="lucide:chevron-right" />
       </NuxtLink>
     </div>
     <!-- 右侧子页面内容 -->
-    <div class="h-full flex-grow rounded-2xl">
+    <div class="h-full grow rounded-2xl">
       <NuxtPage />
     </div>
   </div>

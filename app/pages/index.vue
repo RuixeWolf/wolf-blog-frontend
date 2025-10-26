@@ -159,7 +159,7 @@ function goToNewArticle() {
   <div class="max-w-7xl py-6">
     <div class="flex flex-row gap-4">
       <!-- 文章列表内容 -->
-      <div class="flex-grow">
+      <div class="grow">
         <!-- 文章列表页头 -->
         <div class="mb-6 flex w-full flex-row gap-2">
           <!-- 搜索框 -->
@@ -168,7 +168,7 @@ function goToNewArticle() {
             placeholder="搜索文章标题..."
             leading-icon="i-lucide-search"
             size="xl"
-            class="flex-grow rounded-md bg-[var(--ui-bg)] shadow-lg"
+            class="bg-default grow rounded-md shadow-lg"
             variant="none"
           />
           <!-- 排序选择器 -->
@@ -180,7 +180,7 @@ function goToNewArticle() {
             placeholder="排序"
             icon="i-lucide-arrow-up-down"
             size="xl"
-            class="hover:bg-accented/75 flex-shrink-0 bg-[var(--ui-bg)] shadow-lg"
+            class="hover:bg-accented/75 bg-default shrink-0 shadow-lg"
             variant="none"
           />
           <!-- 高级筛选 -->
@@ -189,12 +189,12 @@ function goToNewArticle() {
               icon="i-lucide-filter"
               size="xl"
               trailing-icon="i-lucide-chevron-down"
-              class="hover:bg-accented/75 flex-shrink-0 bg-[var(--ui-bg)] shadow-lg"
+              class="hover:bg-accented/75 bg-default shrink-0 shadow-lg"
               variant="soft"
               color="neutral"
             />
             <template #content>
-              <div class="w-80 rounded-lg bg-[var(--ui-bg)] p-4 max-lg:right-auto lg:max-w-80">
+              <div class="bg-default w-80 rounded-lg p-4 max-lg:right-auto lg:max-w-80">
                 <div class="mb-3 flex items-center justify-between">
                   <h3 class="text-sm font-medium text-gray-900 dark:text-white">高级筛选</h3>
                   <UButton icon="i-lucide-filter-x" variant="ghost" size="xs" @click="clearFilters">
@@ -243,7 +243,7 @@ function goToNewArticle() {
             option-attribute="label"
             value-attribute="value"
             size="xl"
-            class="hover:bg-accented/75 flex-shrink-0 bg-[var(--ui-bg)] shadow-lg"
+            class="hover:bg-accented/75 bg-default shrink-0 shadow-lg"
             variant="none"
           >
             <template #default="{ modelValue }">
@@ -254,7 +254,7 @@ function goToNewArticle() {
           <UButton
             icon="i-lucide-refresh-cw"
             size="xl"
-            class="flex-shrink-0 bg-[var(--ui-bg)] shadow-lg"
+            class="bg-default shrink-0 shadow-lg"
             variant="soft"
             color="neutral"
             @click="handleRefresh"
@@ -415,7 +415,7 @@ function goToNewArticle() {
           写文章
         </UButton>
         <!-- 个人信息 -->
-        <div class="rounded-lg bg-[var(--ui-bg)] p-4 shadow-lg">
+        <div class="bg-default rounded-lg p-4 shadow-lg">
           <div class="flex w-full flex-col items-center">
             <!-- 头像 -->
             <UAvatar
@@ -446,7 +446,7 @@ function goToNewArticle() {
                 icon="i-lucide-user-circle"
                 variant="ghost"
                 size="lg"
-                class="flex-grow justify-center"
+                class="grow justify-center"
                 color="neutral"
                 :to="currentUser.isLoggedIn ? `/user/${currentUser.userInfo?.id}` : '/user/login'"
               />
@@ -455,7 +455,7 @@ function goToNewArticle() {
                 icon="i-lucide-bookmark"
                 variant="ghost"
                 size="lg"
-                class="flex-grow justify-center"
+                class="grow justify-center"
                 color="neutral"
                 :to="currentUser.isLoggedIn ? '/user/favorites' : '/user/login'"
               />
@@ -464,7 +464,7 @@ function goToNewArticle() {
                 icon="i-lucide-message-circle"
                 variant="ghost"
                 size="lg"
-                class="flex-grow justify-center"
+                class="grow justify-center"
                 color="neutral"
                 :to="currentUser.isLoggedIn ? '/user/comments' : '/user/login'"
               />
@@ -473,7 +473,7 @@ function goToNewArticle() {
                 icon="i-lucide-settings"
                 variant="ghost"
                 size="lg"
-                class="flex-grow justify-center"
+                class="grow justify-center"
                 color="neutral"
                 :to="currentUser.isLoggedIn ? '/user/settings' : '/user/login'"
               />

@@ -60,6 +60,8 @@ declare namespace User {
     email: string
     /** 登录密码 */
     password: string
+    /** 邮箱验证码 */
+    emailVerifyCode: string
   }
 
   /** 注册响应 */

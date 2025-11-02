@@ -129,9 +129,7 @@ watch(
   () => query.pageNumber,
   (newPage, oldPage) => {
     if (newPage && oldPage && newPage !== oldPage && newPage > 1) {
-      nextTick(() => {
-        scrollToTop()
-      })
+      nextTick(() => scrollToTop())
     }
   }
 )
@@ -232,6 +230,7 @@ function goToNewArticle() {
               </div>
             </template>
           </UPopover>
+
           <!-- 分页大小 -->
           <USelect
             v-model="query.pageSize"
@@ -260,6 +259,7 @@ function goToNewArticle() {
             @click="handleRefresh"
           />
         </div>
+
         <!-- 加载状态骨架屏 -->
         <div v-if="pending" class="space-y-4">
           <div v-for="i in Math.min(query.pageSize || 20, 5)" :key="i" class="p-4">
@@ -317,12 +317,12 @@ function goToNewArticle() {
         <!-- 文章列表内容 -->
         <div
           v-else-if="success && articleList?.records && articleList.records.length > 0"
-          class="space-y-4"
+          class="space-y-3"
         >
-          <UCard
+          <div
             v-for="article in articleList.records"
             :key="article.id"
-            class="shadow-lg transition-shadow duration-200 hover:shadow-xl"
+            class="bg-default rounded-lg p-4 shadow-lg transition-shadow duration-200 hover:shadow-xl"
           >
             <div>
               <NuxtLink :to="`/articles/${article.id}`" class="group block">
@@ -357,7 +357,7 @@ function goToNewArticle() {
                 </div>
               </NuxtLink>
             </div>
-          </UCard>
+          </div>
 
           <!-- 分页信息和控件 -->
           <div v-if="articleList.totalRow > 0" class="mt-8 space-y-4">
@@ -401,86 +401,127 @@ function goToNewArticle() {
         </div>
       </div>
 
-      <!-- 个人名片、文章分类 -->
-      <div class="w-60 space-y-4">
-        <!-- 写文章 -->
-        <UButton
-          icon="i-lucide-edit"
-          color="primary"
-          variant="solid"
-          size="xl"
-          class="mb-6 w-60 justify-center shadow-lg"
-          @click="goToNewArticle"
-        >
-          写文章
-        </UButton>
-        <!-- 个人信息 -->
-        <div class="bg-default rounded-lg p-4 shadow-lg">
-          <div class="flex w-full flex-col items-center">
-            <!-- 头像 -->
-            <UAvatar
-              :src="currentUser.userInfo?.avatar ?? undefined"
-              :alt="currentUser.userInfo?.username"
-              size="xl"
-              class="h-24 w-24 rounded-full text-center"
-            />
-            <!-- 用户名 -->
-            <div class="mt-2 text-center text-lg font-semibold text-gray-900 dark:text-white">
-              {{ currentUser.userInfo?.username || '游客' }}
+      <!-- 个人信息、文章分区 -->
+      <ClientOnly>
+        <div class="hidden w-60 space-y-4 lg:block">
+          <!-- 写文章 -->
+          <UButton
+            icon="i-lucide-edit"
+            color="primary"
+            variant="solid"
+            size="xl"
+            class="mb-6 w-60 justify-center shadow-lg"
+            @click="goToNewArticle"
+          >
+            写文章
+          </UButton>
+
+          <!-- 个人信息 -->
+          <div class="bg-default rounded-lg p-4 shadow-lg">
+            <div class="flex w-full flex-col items-center">
+              <!-- 头像 -->
+              <UAvatar
+                :src="currentUser.userInfo?.avatar ?? undefined"
+                :alt="currentUser.userInfo?.username"
+                size="xl"
+                class="h-24 w-24 rounded-full text-center"
+              />
+              <!-- 用户名 -->
+              <div class="mt-2 text-center text-lg font-semibold text-gray-900 dark:text-white">
+                {{ currentUser.userInfo?.username || '游客' }}
+              </div>
+              <!-- 账号 -->
+              <div class="mt-1 text-center text-sm text-gray-500 dark:text-gray-400">
+                {{ currentUser.userInfo?.account || '未登录' }}
+              </div>
+              <!-- 个性签名 -->
+              <div
+                v-if="currentUser.userInfo?.personalStatus"
+                class="mt-2 text-center text-sm text-gray-600 dark:text-gray-300"
+              >
+                {{ currentUser.userInfo?.personalStatus }}
+              </div>
+              <!-- 个人快捷导航 -->
+              <div class="mt-3 flex w-full flex-row items-center justify-between">
+                <!-- 个人主页 -->
+                <UButton
+                  icon="i-lucide-user-circle"
+                  variant="ghost"
+                  size="lg"
+                  class="grow justify-center"
+                  color="neutral"
+                  :to="currentUser.isLoggedIn ? `/user/${currentUser.userInfo?.id}` : '/user/login'"
+                />
+                <!-- 收藏 -->
+                <UButton
+                  icon="i-lucide-bookmark"
+                  variant="ghost"
+                  size="lg"
+                  class="grow justify-center"
+                  color="neutral"
+                  :to="currentUser.isLoggedIn ? '/user/favorites' : '/user/login'"
+                />
+                <!-- 评论管理 -->
+                <UButton
+                  icon="i-lucide-message-circle"
+                  variant="ghost"
+                  size="lg"
+                  class="grow justify-center"
+                  color="neutral"
+                  :to="currentUser.isLoggedIn ? '/user/comments' : '/user/login'"
+                />
+                <!-- 设置 -->
+                <UButton
+                  icon="i-lucide-settings"
+                  variant="ghost"
+                  size="lg"
+                  class="grow justify-center"
+                  color="neutral"
+                  :to="currentUser.isLoggedIn ? '/user/settings' : '/user/login'"
+                />
+              </div>
             </div>
-            <!-- 账号 -->
-            <div class="mt-1 text-center text-sm text-gray-500 dark:text-gray-400">
-              {{ currentUser.userInfo?.account || '未登录' }}
-            </div>
-            <!-- 个性签名 -->
-            <div
-              v-if="currentUser.userInfo?.personalStatus"
-              class="mt-2 text-center text-sm text-gray-600 dark:text-gray-300"
-            >
-              {{ currentUser.userInfo?.personalStatus }}
-            </div>
-            <!-- 个人快捷导航 -->
-            <div class="mt-3 flex w-full flex-row items-center justify-between">
-              <!-- 个人主页 -->
-              <UButton
-                icon="i-lucide-user-circle"
-                variant="ghost"
-                size="lg"
-                class="grow justify-center"
-                color="neutral"
-                :to="currentUser.isLoggedIn ? `/user/${currentUser.userInfo?.id}` : '/user/login'"
-              />
-              <!-- 收藏 -->
-              <UButton
-                icon="i-lucide-bookmark"
-                variant="ghost"
-                size="lg"
-                class="grow justify-center"
-                color="neutral"
-                :to="currentUser.isLoggedIn ? '/user/favorites' : '/user/login'"
-              />
-              <!-- 评论管理 -->
-              <UButton
-                icon="i-lucide-message-circle"
-                variant="ghost"
-                size="lg"
-                class="grow justify-center"
-                color="neutral"
-                :to="currentUser.isLoggedIn ? '/user/comments' : '/user/login'"
-              />
-              <!-- 设置 -->
-              <UButton
-                icon="i-lucide-settings"
-                variant="ghost"
-                size="lg"
-                class="grow justify-center"
-                color="neutral"
-                :to="currentUser.isLoggedIn ? '/user/settings' : '/user/login'"
-              />
+          </div>
+
+          <!-- 文章分区 -->
+          <div class="bg-default overflow-hidden rounded-lg shadow-lg">
+            <div class="w-full p-4 pb-2">
+              <div class="flex w-full flex-col items-center">
+                <div class="text-lg font-semibold text-gray-900 dark:text-white">文章分区</div>
+                <div class="mt-1 flex w-full flex-col">
+                  <div
+                    v-for="category in [
+                      { id: 1, name: '技术分享' },
+                      { id: 2, name: '生活随笔' },
+                      { id: 3, name: '学习笔记' },
+                      { id: 4, name: '新闻资讯' },
+                      { id: 5, name: '其他分类' }
+                    ]"
+                    :key="category.id"
+                    class="border-accented w-full justify-start border-b py-1 last:border-b-0"
+                  >
+                    <UButton variant="link" color="neutral" class="w-full">
+                      {{ category.name }}
+                    </UButton>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+
+        <!-- 写文章按钮（窄屏） -->
+        <div v-if="isLoggedIn" class="fixed right-6 bottom-6 z-50 lg:hidden">
+          <UButton
+            icon="i-lucide-edit"
+            color="primary"
+            variant="solid"
+            size="xl"
+            class="h-14 w-14 items-center justify-center rounded-full p-0 shadow-lg"
+            @click="goToNewArticle"
+          />
+        </div>
+      </ClientOnly>
     </div>
   </div>
 </template>

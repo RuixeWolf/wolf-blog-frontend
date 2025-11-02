@@ -176,12 +176,12 @@ const dropdownItems = computed(() => {
       {
         label: '编辑',
         icon: 'i-lucide-edit',
-        click: () => navigateTo(`/articles/edit/${articleId.value}`)
+        onSelect: () => navigateTo(`/articles/edit/${articleId.value}`)
       },
       {
         label: '删除',
         icon: 'i-lucide-trash-2',
-        click: handleDeleteArticle
+        onSelect: handleDeleteArticle
       }
     )
   }
@@ -191,12 +191,12 @@ const dropdownItems = computed(() => {
     {
       label: isLiked.value ? '已点赞' : '点赞',
       icon: 'lucide:thumbs-up',
-      click: handleToggleLike
+      onSelect: handleToggleLike
     },
     {
       label: '收藏',
       icon: 'i-lucide-bookmark',
-      click: () => {
+      onSelect: () => {
         // TODO: 实现收藏功能
         toast.add({
           title: '功能开发中',
@@ -208,7 +208,7 @@ const dropdownItems = computed(() => {
     {
       label: '分享',
       icon: 'i-lucide-share-2',
-      click: handleShareArticle
+      onSelect: handleShareArticle
     }
   )
 

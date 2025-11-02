@@ -70,10 +70,10 @@ async function handleSubmit(event: FormSubmitEvent<LoginForm>): Promise<void> {
 </script>
 
 <template>
-  <div class="flex min-h-full">
+  <div class="flex min-h-[calc(100vh-var(--ui-header-height))]">
     <!-- 左侧背景装饰区域 -->
     <div
-      class="from-primary-500 to-primary-600 relative hidden flex-col items-center justify-center overflow-hidden bg-gradient-to-br lg:flex lg:w-1/2"
+      class="from-primary-500 to-primary-600 relative hidden flex-col items-center justify-center overflow-hidden bg-linear-to-br lg:flex lg:w-1/2"
     >
       <!-- 背景装饰图案 -->
       <div class="absolute inset-0 opacity-20">

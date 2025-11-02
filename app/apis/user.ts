@@ -22,7 +22,8 @@ export async function register(data: User.RegisterRequest): Promise<User.Registe
   const body = {
     username: String(data.username),
     email: String(data.email),
-    password: String(data.password)
+    password: String(data.password),
+    emailVerifyCode: String(data.emailVerifyCode)
   }
   const response = await $api<ApiResponse<User.RegisterResponse>>('/user/register', {
     method: 'POST',
@@ -146,6 +147,19 @@ export async function getUsersBriefByIds(
   })
   const response = await $api<ApiResponse<User.UserBrief[]>>(
     `/user/brief${searchParams.toString() ? `?${searchParams.toString()}` : ''}`
+  )
+  if (!response.success) throw new ApiError(response)
+  return response.data
+}
+
+/** 发送邮箱注册验证码 */
+export async function sendEmailRegisterCode(email: string): Promise<void> {
+  const { $api } = useNuxtApp()
+  const response = await $api<ApiResponse<void>>(
+    `/mail/register?email=${encodeURIComponent(email)}`,
+    {
+      method: 'GET'
+    }
   )
   if (!response.success) throw new ApiError(response)
   return response.data

@@ -15,6 +15,7 @@ export default withNuxt({
         ignoreRestSiblings: true
       }
     ],
+    '@typescript-eslint/unified-signatures': 'off',
     'vue/html-self-closing': [
       'warn',
       {

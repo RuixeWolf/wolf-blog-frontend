@@ -13,8 +13,11 @@ import {
  * @property {string} loginRedirectPath 登录后需要跳转回的路由地址
  */
 const props = defineProps<{
+  /** 文章 ID */
   articleId: number
+  /** 文章作者用户 ID */
   articleAuthorId: number
+  /** 登录后重定向路径 */
   loginRedirectPath: string
 }>()
 

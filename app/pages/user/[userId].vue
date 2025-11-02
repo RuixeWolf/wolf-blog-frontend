@@ -46,7 +46,7 @@ const {
   data: userInfo,
   pending: userPending,
   error: userError,
-  refresh: refreshUserInfo
+  refresh: _refreshUserInfo
 } = useAsyncData<User.UserInfo | null>(
   () => `user-profile-${profileUserId.value ?? 'unknown'}`,
   async () => {
@@ -86,7 +86,7 @@ const {
   data: ownerArticles,
   pending: ownerArticlesPending,
   error: ownerArticlesError,
-  refresh: refreshOwnerArticles
+  refresh: _refreshOwnerArticles
 } = useAsyncData<Article.ArticleQueryRecord[]>(
   () => `user-owner-articles-${profileUserId.value ?? 'unknown'}`,
   async () => {
@@ -288,7 +288,7 @@ watch(
 /**
  * 汇总页面各区域的加载状态，用于刷新按钮联动。
  */
-const combinedRefreshing = computed(
+const _combinedRefreshing = computed(
   () =>
     userPending.value ||
     ownerArticlesPending.value ||

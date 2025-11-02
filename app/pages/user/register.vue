@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import { z } from 'zod'
-import { register } from '@/apis/user'
+import { register, sendEmailRegisterCode } from '@/apis/user'
 import type { FormSubmitEvent } from '@nuxt/ui'
 
 const toast = useToast()
@@ -14,6 +14,7 @@ const registerSchema = z
       .min(3, '用户名至少3个字符')
       .regex(/^[a-zA-Z0-9]+$/, '用户名只能包含字母和数字'),
     email: z.email('请输入有效的邮箱地址'),
+    emailVerifyCode: z.string().min(1, '请输入邮箱验证码'),
     password: z.string().min(1, '请输入密码').min(6, '密码至少6个字符'),
     confirmPassword: z.string().min(1, '请确认密码')
   })
@@ -39,12 +40,66 @@ if (import.meta.client && currentUser.isLoggedIn) {
 const registerForm = ref<RegisterForm>({
   username: '',
   email: '',
+  emailVerifyCode: '',
   password: '',
   confirmPassword: ''
 })
 
 /** 注册加载状态 */
 const isLoading = ref(false)
+
+/** 验证码倒计时状态 */
+const countdown = ref(0)
+const isSendingCode = ref(false)
+
+/** 获取验证码 */
+async function sendVerificationCode(): Promise<void> {
+  if (!registerForm.value.email) {
+    toast.add({
+      title: '请输入邮箱',
+      description: '请先输入邮箱地址',
+      color: 'warning'
+    })
+    return
+  }
+
+  if (countdown.value > 0) return
+
+  isSendingCode.value = true
+  try {
+    await sendEmailRegisterCode(registerForm.value.email)
+    toast.add({
+      title: '验证码已发送',
+      description: '请检查您的邮箱',
+      color: 'success'
+    })
+    countdown.value = 60 // 60秒倒计时
+    const timer = setInterval(() => {
+      countdown.value--
+      if (countdown.value <= 0) {
+        clearInterval(timer)
+      }
+    }, 1000)
+  } catch (error) {
+    if (error instanceof ApiError) {
+      const { code, message } = error
+      toast.add({
+        title: '发送失败',
+        description: `${message} (${code})`,
+        color: 'error'
+      })
+    } else {
+      console.error('发送验证码失败', error)
+      toast.add({
+        title: '发送失败',
+        description: '网络错误，请稍后重试',
+        color: 'error'
+      })
+    }
+  } finally {
+    isSendingCode.value = false
+  }
+}
 
 /** 处理注册 */
 async function handleSubmit(event: FormSubmitEvent<RegisterForm>): Promise<void> {
@@ -81,10 +136,10 @@ async function handleSubmit(event: FormSubmitEvent<RegisterForm>): Promise<void>
 </script>
 
 <template>
-  <div class="flex min-h-full">
+  <div class="flex min-h-[calc(100vh-var(--ui-header-height))]">
     <!-- 左侧背景装饰区域 -->
     <div
-      class="from-primary-500 to-primary-600 relative hidden flex-col items-center justify-center overflow-hidden bg-gradient-to-br lg:flex lg:w-1/2"
+      class="from-primary-500 to-primary-600 relative hidden flex-col items-center justify-center overflow-hidden bg-linear-to-br lg:flex lg:w-1/2"
     >
       <!-- 背景装饰图案 -->
       <div class="absolute inset-0 opacity-20">
@@ -170,6 +225,30 @@ async function handleSubmit(event: FormSubmitEvent<RegisterForm>): Promise<void>
                 class="w-full"
                 :disabled="isLoading"
               />
+            </UFormField>
+
+            <!-- 邮箱验证码 -->
+            <UFormField label="邮箱验证码" name="emailVerifyCode" required class="px-4">
+              <div class="flex gap-3">
+                <UInput
+                  v-model="registerForm.emailVerifyCode"
+                  placeholder="请输入验证码"
+                  icon="i-heroicons-shield-check"
+                  size="lg"
+                  class="flex-1"
+                  :disabled="isLoading"
+                />
+                <UButton
+                  type="button"
+                  size="lg"
+                  variant="outline"
+                  :disabled="!registerForm.email || countdown > 0 || isSendingCode || isLoading"
+                  :loading="isSendingCode"
+                  @click="sendVerificationCode"
+                >
+                  {{ countdown > 0 ? `${countdown}s` : isSendingCode ? '发送中' : '获取验证码' }}
+                </UButton>
+              </div>
             </UFormField>
 
             <!-- 密码 -->

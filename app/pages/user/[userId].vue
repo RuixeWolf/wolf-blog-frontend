@@ -294,6 +294,29 @@ const _combinedRefreshing = computed(
     ownerArticlesPending.value ||
     (isSelf.value && (partitionsPending.value || commentsPending.value))
 )
+
+/** SEO 设置 */
+useSeo(
+  computed<SeoData>(() => {
+    if (!userInfo.value) {
+      return {
+        title: '用户资料',
+        description: '查看用户资料和发布的文章'
+        // type: 'profile'
+      }
+    }
+
+    const user = userInfo.value
+    return {
+      title: `${user.nickname || user.account}的主页`,
+      description:
+        user.personalStatus || `${user.nickname || user.account} 的个人主页，查看发布的文章和动态`,
+      keywords: `用户,${user.account},${user.nickname || ''},博客,文章`.trim(),
+      // type: 'profile',
+      author: user.nickname || user.account
+    }
+  })
+)
 </script>
 
 <template>

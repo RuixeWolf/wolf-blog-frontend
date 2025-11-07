@@ -3,10 +3,16 @@
 const currentUser = useCurrentUser()
 const { isLoggedIn } = storeToRefs(currentUser)
 
+/** Vue Route */
+const route = useRoute()
+/** 初始搜索关键词，来源于 URL 的查询参数 */
+const initialSearchTerm = route.query.q && typeof route.query.q === 'string' ? route.query.q : ''
+
 /** 文章列表查询参数 */
 const query = reactive<Article.ArticleListQuery>({
   pageNumber: 1,
-  pageSize: 20
+  pageSize: 20,
+  ...(initialSearchTerm && { title: initialSearchTerm })
 })
 
 /** 文章列表数据 */
@@ -21,11 +27,12 @@ const {
 } = useApi<ApiPageData<Article.ArticleInfo>>('/article/query', {
   method: 'POST',
   headers: { 'Content-Type': 'application/nullable+json' },
-  body: query
+  body: query,
+  watch: [query]
 })
 
 /** 搜索相关 */
-const searchQuery = ref('')
+const searchQuery = ref(initialSearchTerm)
 const searchTimeout = ref<NodeJS.Timeout>()
 
 /** 筛选选项 */
@@ -141,9 +148,11 @@ watch(searchQuery, handleSearch)
 watch(dateRange, applyFilters, { deep: true })
 
 /** 页面标题 */
-useHead({
-  title: 'Wolf Blog - 文章列表',
-  meta: [{ name: 'description', content: '浏览所有精彩文章，发现有趣的内容和观点' }]
+useSeo({
+  title: 'Wolf Blog - 狼屋博客',
+  description: '浏览所有精彩文章，发现有趣的内容和观点',
+  keywords: '博客,文章,技术分享,前端开发,Vue,Nuxt,TypeScript,首页',
+  type: 'website'
 })
 
 /** 跳转至新建文章页面 */
@@ -330,7 +339,7 @@ function goToNewArticle() {
                   {{ article.title }}
                 </h3>
                 <div
-                  v-if="article.primary"
+                  v-show="article.primary"
                   class="mt-1 line-clamp-2 text-gray-600 dark:text-gray-300"
                 >
                   {{ article.primary }}
@@ -338,9 +347,11 @@ function goToNewArticle() {
                 <div class="mt-2 flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
                   <div class="flex items-center gap-1">
                     <UIcon name="i-lucide-user" class="h-4 w-4" />
-                    <ULink :to="`/user/${article.author?.id}`">{{
-                      article.author?.nickname ?? article.author?.account
-                    }}</ULink>
+                    <span
+                      class="hover:text-primary-500 cursor-pointer hover:underline"
+                      @click.stop="navigateTo(`/user/${article.author?.id}`)"
+                      >{{ article.author?.nickname ?? article.author?.account }}</span
+                    >
                   </div>
                   <div v-if="article.postTime" class="flex items-center gap-1">
                     <UIcon name="i-lucide-calendar" class="h-4 w-4" />
@@ -521,6 +532,16 @@ function goToNewArticle() {
             @click="goToNewArticle"
           />
         </div>
+        <template #fallback>
+          <div class="hidden w-60 space-y-4 lg:block">
+            <!-- 占位符：写文章按钮 -->
+            <USkeleton class="mb-6 h-12 w-60" />
+            <!-- 占位符：个人信息 -->
+            <USkeleton class="h-64 w-60" />
+            <!-- 占位符：文章分区 -->
+            <USkeleton class="h-48 w-60" />
+          </div>
+        </template>
       </ClientOnly>
     </div>
   </div>

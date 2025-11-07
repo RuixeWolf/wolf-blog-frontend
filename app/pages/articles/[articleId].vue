@@ -382,10 +382,34 @@ async function handleShareArticle() {
   }
 }
 
-useHead(() => ({
-  title: article.value?.title ? `${article.value.title} - Wolf Blog` : 'Wolf Blog',
-  meta: [{ name: 'description', content: article.value?.primary || '文章详情页' }]
-}))
+useSeo(
+  computed(() => {
+    const {
+      public: { siteUrl }
+    } = useRuntimeConfig()
+
+    if (!article.value) {
+      return {
+        title: '文章详情',
+        description: '查看文章详情和内容',
+        type: 'article'
+      }
+    }
+
+    return {
+      title: article.value.title,
+      description: article.value.primary || article.value.title,
+      keywords: article.value.tags?.join(',') || '文章,博客,技术分享',
+      type: 'article',
+      author: article.value.author.nickname || article.value.author.account,
+      publishedTime: article.value.postTime,
+      modifiedTime: article.value.postTime,
+      section: `分区 ${article.value.partitionId}`,
+      tags: article.value.tags || [],
+      canonical: `${siteUrl}/articles/${article.value.id}`
+    }
+  })
+)
 
 /** 滚动事件监听 */
 onMounted(() => {

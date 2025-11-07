@@ -3,9 +3,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "nuxt dev --host --dotenv .env.development",
+    "dev": "nuxt dev --dotenv .env.development",
     "format": "prettier --write .",
     "lint": "eslint --fix .",
+    "format-lint": "npm run format && npm run lint",
     "typecheck": "nuxt prepare && vue-tsc -b --noEmit",
     "build": "nuxt build --dotenv .env.production",
     "generate": "nuxt generate",
@@ -16,24 +17,27 @@
     "@nuxt/eslint": "1.10.0",
     "@nuxt/ui": "4.1.0",
     "@nuxthub/core": "^0.9.0",
-    "@pinia/nuxt": "^0.11.2",
+    "@pinia/nuxt": "^0.11.3",
     "@vueuse/core": "^14.0.0",
     "@vueuse/nuxt": "^14.0.0",
-    "eslint": "^9.39.0",
-    "md-editor-v3": "^6.1.0",
-    "nuxt": "^4.2.0",
-    "pinia": "^3.0.3",
+    "eslint": "^9.39.1",
+    "md-editor-v3": "^6.1.1",
+    "nuxt": "^4.2.1",
+    "pinia": "^3.0.4",
     "typescript": "^5.9.3",
-    "vue": "^3.5.22",
+    "vue": "^3.5.23",
     "vue-router": "^4.6.3",
     "zod": "^4.1.12"
   },
   "devDependencies": {
     "@ianvs/prettier-plugin-sort-imports": "^4.7.0",
-    "@iconify-json/lucide": "^1.2.71",
+    "@iconify-json/lucide": "^1.2.72",
+    "@nuxtjs/robots": "^5.5.6",
+    "@nuxtjs/seo": "^3.2.2",
+    "@nuxtjs/sitemap": "^7.4.7",
     "prettier": "^3.6.2",
     "prettier-plugin-tailwindcss": "^0.7.1",
     "sass-embedded": "^1.93.3",
-    "vue-tsc": "^3.1.2"
+    "vue-tsc": "^3.1.3"
   }
 }

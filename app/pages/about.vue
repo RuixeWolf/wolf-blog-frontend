@@ -15,8 +15,10 @@ if (route.path === '/about') {
 }
 
 /** 页面标题 */
-useHead({
-  title: 'Wolf Blog - 关于'
+useSeo({
+  title: '关于我们',
+  description: '了解 Wolf Blog 的发展历程、团队成员和版本更新信息',
+  keywords: '关于我们,开发团队,版本历史,Wolf Blog,博客平台'
 })
 </script>
 

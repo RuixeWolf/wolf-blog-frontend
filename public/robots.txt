@@ -1,2 +1,9 @@
-User-Agent: *
-Disallow:
+User-agent: *
+Allow: /
+Disallow: /user/login
+Disallow: /user/register
+Disallow: /user/settings
+Disallow: /articles/edit
+
+# 站点地图
+Sitemap: https://wolfblog.cn/sitemap.xml

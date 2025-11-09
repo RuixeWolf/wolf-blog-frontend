@@ -97,4 +97,25 @@ declare namespace User {
     /** 用户 ID 列表 */
     ids: Array<UserBrief['id']>
   }
+
+  /** 邮箱注册请求 */
+  interface EmailRegisterRequest {
+    /** 注册邮箱 */
+    email: string
+    /** 人机验证参数 */
+    verifyParams: string
+  }
+
+  /** 邮箱注册响应 */
+  interface EmailRegisterResponse {
+    /** 人机验证结果 */
+    verifyResult: {
+      /** 是否验证成功 */
+      verifyResult: boolean
+      /** 验证失败的提示信息 */
+      verifyCode: string
+      /** 用于标识单次验证周期 */
+      certifyId: string | null
+    }
+  }
 }

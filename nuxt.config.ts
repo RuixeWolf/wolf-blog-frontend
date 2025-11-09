@@ -38,7 +38,11 @@ export default defineNuxtConfig({
       /** SSR 服务端 API 基础路径（优先级高于 apiBase） */
       apiBaseServer: '',
       /** 网站 URL */
-      siteUrl: process.env.NUXT_PUBLIC_SITE_URL || 'https://wolfblog.cn'
+      siteUrl: process.env.NUXT_PUBLIC_SITE_URL || 'https://wolfblog.cn',
+      /** 阿里云验证码前缀 */
+      aliyunCaptchaPrefix: process.env.NUXT_PUBLIC_ALIYUN_CAPTCHA_PREFIX,
+      /** 阿里云验证码场景 ID - 用户注册邮箱验证码 */
+      aliyunCaptchaSceneIdEmailCode: process.env.NUXT_PUBLIC_ALIYUN_CAPTCHA_SCENE_ID_EMAIL_CODE
     }
   },
 
@@ -49,6 +53,24 @@ export default defineNuxtConfig({
       changefreq: 'daily',
       priority: 1,
       lastmod: new Date().toISOString()
+    }
+  },
+
+  // 应用配置
+  app: {
+    head: {
+      script: [
+        // 阿里云验证码配置
+        {
+          type: 'text/javascript',
+          textContent: `window.AliyunCaptchaConfig = { region: 'cn', prefix: '${process.env.NUXT_PUBLIC_ALIYUN_CAPTCHA_PREFIX || ''}' };`
+        },
+        // 阿里云验证码脚本
+        {
+          type: 'text/javascript',
+          src: 'https://o.alicdn.com/captcha-frontend/aliyunCaptcha/AliyunCaptcha.js'
+        }
+      ]
     }
   }
 })

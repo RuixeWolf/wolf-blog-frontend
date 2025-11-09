@@ -5,6 +5,7 @@ import type { FormSubmitEvent } from '@nuxt/ui'
 
 const toast = useToast()
 const currentUser = useCurrentUser()
+const config = useRuntimeConfig()
 
 // 定义验证 schema
 const registerSchema = z
@@ -52,34 +53,77 @@ const isLoading = ref(false)
 const countdown = ref(0)
 const isSendingCode = ref(false)
 
-/** 获取验证码 */
-async function sendVerificationCode(): Promise<void> {
-  if (!registerForm.value.email) {
-    toast.add({
-      title: '请输入邮箱',
-      description: '请先输入邮箱地址',
-      color: 'warning'
-    })
+/** 初始化发送邮箱验证码的阿里云人机验证服务 */
+function initSendEmailCodeAliyunCaptcha() {
+  if (window?.initAliyunCaptcha == null) {
+    console.error('阿里云验证码 SDK 未加载')
     return
   }
 
+  window.initAliyunCaptcha({
+    SceneId: config.public.aliyunCaptchaSceneIdEmailCode,
+    mode: 'popup',
+    element: '#captcha-element',
+    button: '#captcha-button',
+    success: sendEmailCode,
+    fail: (error: { code: string; message: string }) => {
+      console.error('阿里云验证码验证失败：', error)
+      toast.add({
+        title: '人机验证失败',
+        description: error?.message || '请重试',
+        color: 'error'
+      })
+    }
+  })
+}
+
+/** 发送邮箱验证码（内部方法，由阿里云验证码成功回调函数调用） */
+async function sendEmailCode(captchaVerifyParam: string) {
   if (countdown.value > 0) return
+
+  // 验证表单邮箱字段
+  try {
+    registerSchema.pick({ email: true }).parse({ email: registerForm.value.email })
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      const emailError = error.issues.find((err) => err.path[0] === 'email')
+      if (emailError) {
+        toast.add({
+          title: '邮箱格式错误',
+          description: emailError.message,
+          color: 'warning'
+        })
+        return
+      }
+    }
+  }
 
   isSendingCode.value = true
   try {
-    await sendEmailRegisterCode(registerForm.value.email)
-    toast.add({
-      title: '验证码已发送',
-      description: '请检查您的邮箱',
-      color: 'success'
+    const response = await sendEmailRegisterCode({
+      email: registerForm.value.email,
+      verifyParams: captchaVerifyParam
     })
-    countdown.value = 60 // 60秒倒计时
-    const timer = setInterval(() => {
-      countdown.value--
-      if (countdown.value <= 0) {
-        clearInterval(timer)
-      }
-    }, 1000)
+
+    // 检查验证结果
+    if (response.verifyResult.verifyResult) {
+      toast.add({
+        title: '验证码已发送',
+        description: '请检查您的邮箱',
+        color: 'success'
+      })
+      countdown.value = 60 // 60秒倒计时
+      const timer = setInterval(() => {
+        countdown.value--
+        if (countdown.value <= 0) clearInterval(timer)
+      }, 1000)
+    } else {
+      toast.add({
+        title: '人机验证失败',
+        description: response.verifyResult.verifyCode || '验证失败，请重试',
+        color: 'error'
+      })
+    }
   } catch (error) {
     if (error instanceof ApiError) {
       const { code, message } = error
@@ -91,8 +135,8 @@ async function sendVerificationCode(): Promise<void> {
     } else {
       console.error('发送验证码失败', error)
       toast.add({
-        title: '发送失败',
-        description: '网络错误，请稍后重试',
+        title: '验证失败',
+        description: '请重试',
         color: 'error'
       })
     }
@@ -133,6 +177,11 @@ async function handleSubmit(event: FormSubmitEvent<RegisterForm>): Promise<void>
     isLoading.value = false
   }
 }
+
+// 组件挂载后初始化验证码
+onMounted(() => {
+  initSendEmailCodeAliyunCaptcha()
+})
 </script>
 
 <template>
@@ -239,16 +288,18 @@ async function handleSubmit(event: FormSubmitEvent<RegisterForm>): Promise<void>
                   :disabled="isLoading"
                 />
                 <UButton
+                  id="captcha-button"
                   type="button"
                   size="lg"
                   variant="outline"
                   :disabled="!registerForm.email || countdown > 0 || isSendingCode || isLoading"
                   :loading="isSendingCode"
-                  @click="sendVerificationCode"
                 >
                   {{ countdown > 0 ? `${countdown}s` : isSendingCode ? '发送中' : '获取验证码' }}
                 </UButton>
               </div>
+              <!-- 阿里云验证码容器（隐藏） -->
+              <div id="captcha-element" style="display: none" />
             </UFormField>
 
             <!-- 密码 -->

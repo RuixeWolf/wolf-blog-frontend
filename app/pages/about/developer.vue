@@ -20,15 +20,16 @@ interface Developer {
 /** 开发者列表 */
 const DEVELOPERS: Developer[] = [
   {
-    userId: '10001',
+    userId: '66666',
     name: 'Rylin Wolf · 夜凌',
     role: '后端开发',
     description: '负责网站的后端开发与维护，以及服务器的管理与运维。',
-    email: 'zhangsan@example.com',
-    github: 'https://avatars.githubusercontent.com/u/66715948'
+    email: 'RylinSong@iCloud.com',
+    avatarUrl: 'https://avatars.githubusercontent.com/u/66715948',
+    github: 'https://github.com/RylinWolf'
   },
   {
-    userId: '10007',
+    userId: '88888',
     name: 'Ruixe Wolf · 瑞克',
     role: '前端开发',
     avatarUrl:
@@ -38,7 +39,7 @@ const DEVELOPERS: Developer[] = [
     github: 'https://github.com/RuixeWolf'
   },
   {
-    userId: '3',
+    userId: '10006',
     name: '柏牧狼犬',
     role: 'UI 设计',
     description: '负责网站的 UI 设计',

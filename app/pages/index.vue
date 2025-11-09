@@ -151,7 +151,8 @@ watch(dateRange, applyFilters, { deep: true })
 useSeo({
   title: 'Wolf Blog - 狼屋博客',
   description: '浏览所有精彩文章，发现有趣的内容和观点',
-  keywords: '博客,文章,技术分享,前端开发,Vue,Nuxt,TypeScript,首页',
+  keywords:
+    'Wolf Blog, WolfBlog, 狼屋博客, 狼屋, 博客, 文章, 技术分享, 前端开发, Vue, Nuxt, TypeScript, 首页',
   type: 'website'
 })
 
@@ -349,7 +350,7 @@ function goToNewArticle() {
                     <UIcon name="i-lucide-user" class="h-4 w-4" />
                     <span
                       class="hover:text-primary-500 cursor-pointer hover:underline"
-                      @click.stop="navigateTo(`/user/${article.author?.id}`)"
+                      @click.stop.prevent="navigateTo(`/user/${article.author?.id}`)"
                       >{{ article.author?.nickname ?? article.author?.account }}</span
                     >
                   </div>

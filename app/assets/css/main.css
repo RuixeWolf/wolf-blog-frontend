@@ -22,6 +22,10 @@
   list-style-type: circle !important;
 }
 
+.md-editor-preview {
+  white-space: pre-wrap;
+}
+
 .md-editor ol {
   list-style-type: decimal !important;
 }

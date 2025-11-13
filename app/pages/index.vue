@@ -150,10 +150,10 @@ watch(dateRange, applyFilters, { deep: true })
 /** 页面标题 */
 useSeo({
   title: 'Wolf Blog - 狼屋博客',
-  description: '浏览所有精彩文章，发现有趣的内容和观点',
   keywords:
     'Wolf Blog, WolfBlog, 狼屋博客, 狼屋, 博客, 文章, 技术分享, 前端开发, Vue, Nuxt, TypeScript, 首页',
-  type: 'website'
+  type: 'website',
+  description: 'Wolf Blog 狼屋博客 —— 技术分享、随笔与文章创作的平台'
 })
 
 /** 跳转至新建文章页面 */

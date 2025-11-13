@@ -1,4 +1,8 @@
+/// <reference types="./shared/types/type.d.ts" />
+/// <reference types="./shared/types/Article.d.ts" />
+
 import { defineNuxtConfig } from 'nuxt/config'
+import { ofetch } from 'ofetch'
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
@@ -45,20 +49,16 @@ export default defineNuxtConfig({
       aliyunCaptchaSceneIdEmailCode: process.env.NUXT_PUBLIC_ALIYUN_CAPTCHA_SCENE_ID_EMAIL_CODE
     }
   },
-
-  // Sitemap 配置
-  sitemap: {
-    exclude: ['/user/settings', '/user/login', '/user/register', '/articles/edit/**'],
-    defaults: {
-      changefreq: 'daily',
-      priority: 1,
-      lastmod: new Date().toISOString()
-    }
-  },
-
   // 应用配置
   app: {
     head: {
+      meta: [
+        {
+          name: 'google-site-verification',
+          content: 'NXfgjEswn0tQ1ObEiwXr5TvJkSLoLoORnRqs0d1yzzo'
+        },
+        { name: 'msvalidate.01', content: 'C946A40DA6A8822BEDC0C5463EEDB211' }
+      ],
       script: [
         // 阿里云验证码配置
         {
@@ -71,6 +71,35 @@ export default defineNuxtConfig({
           src: 'https://o.alicdn.com/captcha-frontend/aliyunCaptcha/AliyunCaptcha.js'
         }
       ]
+    }
+  },
+
+  // Sitemap 配置
+  sitemap: {
+    exclude: ['/user/settings', '/user/login', '/user/register', '/articles/edit/**'],
+    defaults: {
+      changefreq: 'daily',
+      priority: 1,
+      lastmod: new Date()
+    },
+    urls: async () => {
+      const articleList = await ofetch<ApiResponse<ApiPageData<Article.ArticleInfo>>>(
+        `${process.env.NUXT_PUBLIC_API_BASE_SERVER || process.env.NUXT_PUBLIC_API_BASE}/article/query`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/nullable+json' },
+          body: {
+            pageSize: 1000, // 获取全量数据
+            visibility: 0 // 仅公开文章
+          }
+        }
+      )
+      return (
+        articleList?.data?.records?.map((article: Article.ArticleInfo) => ({
+          loc: `/articles/${article.id}`,
+          lastmod: new Date(article.postTime)
+        })) || []
+      )
     }
   }
 })

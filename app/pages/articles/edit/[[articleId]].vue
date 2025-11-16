@@ -241,19 +241,12 @@ useHead(() => ({
 
           <!-- 分区和可见性（一行排列） -->
           <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <!-- 分区 ID -->
+            <!-- 分区选择器 -->
             <div>
               <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                分区 ID
+                文章分区
               </label>
-              <UInput
-                v-model.number="formData.partitionId"
-                class="w-full"
-                type="number"
-                placeholder="分区 ID"
-                :min="1"
-                size="sm"
-              />
+              <ArticlePartitionSelector v-model="formData.partitionId" size="sm" />
             </div>
 
             <!-- 可见性 -->

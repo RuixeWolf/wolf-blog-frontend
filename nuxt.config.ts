@@ -97,7 +97,7 @@ export default defineNuxtConfig({
       return (
         articleList?.data?.records?.map((article: Article.ArticleInfo) => ({
           loc: `/articles/${article.id}`,
-          lastmod: new Date(article.postTime)
+          lastmod: new Date(article.editTime || article.postTime)
         })) || []
       )
     }

@@ -45,7 +45,7 @@ declare namespace Favorite {
     /** 文章 ID */
     articleId: number
     /** 收藏夹 ID */
-    favoriteId: number
+    favoritesId: number
     /** 收藏时间 */
     favoriteDate: string
   }

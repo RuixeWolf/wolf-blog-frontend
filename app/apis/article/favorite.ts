@@ -4,9 +4,9 @@ import { filterUndefinedFields, optionalField } from '~~/shared/utils/data-proce
 /** 获取文章所属收藏夹列表 */
 export async function getArticleFavorites(
   articleId: Article.ArticleDetail['id']
-): Promise<Favorite.FavoriteFolder[]> {
+): Promise<Favorite.FavoriteArticleRecord[]> {
   const { $api } = useNuxtApp()
-  const response = await $api<ApiResponse<Favorite.FavoriteFolder[]>>(
+  const response = await $api<ApiResponse<Favorite.FavoriteArticleRecord[]>>(
     `/article/favorite/${articleId}`
   )
   if (!response.success) throw new ApiError(response)

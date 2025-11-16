@@ -7,7 +7,12 @@ import UserFavoritesPanel from '~/components/user/UserFavoritesPanel.vue'
 import UserPartitionsPanel from '~/components/user/UserPartitionsPanel.vue'
 import UserProfileOverview from '~/components/user/UserProfileOverview.vue'
 
-type SimpleArticle = Pick<Article.ArticleInfo, 'id' | 'title' | 'postTime' | 'views'>
+interface SimpleArticle {
+  id: number
+  title: string
+  postTime: string | null
+  views: number | null
+}
 
 interface CommentEntry {
   article: SimpleArticle
@@ -83,7 +88,7 @@ useSeoMeta({
 const ownerArticlePageSize = 20
 
 const {
-  data: ownerArticles,
+  data: _ownerArticles,
   pending: ownerArticlesPending,
   error: ownerArticlesError,
   refresh: _refreshOwnerArticles
@@ -107,26 +112,13 @@ const {
  */
 const ownerArticlesErrorMessage = computed(() => ownerArticlesError.value?.message ?? null)
 
-const ownerArticleList = computed(() => ownerArticles.value ?? [])
-/**
- * 将文章列表规范化，提取用于评论拉取所需的最小字段。
- */
-const normalizedArticles = computed<SimpleArticle[]>(() =>
-  ownerArticleList.value.map((record) => ({
-    id: record.id,
-    title: record.title,
-    postTime: record.postTime,
-    views: 'views' in record ? (record.views ?? 0) : 0
-  }))
-)
-
 const comments = ref<CommentEntry[]>([])
 const commentsPending = ref(false)
 const commentsError = ref<Error | null>(null)
 let commentsRequestToken = 0
 
 /**
- * 按照最近文章批量拉取最新评论。
+ * 拉取当前用户发表的所有评论。
  * @returns {Promise<void>} 异步操作完成后返回。
  */
 async function reloadComments(): Promise<void> {
@@ -141,42 +133,28 @@ async function reloadComments(): Promise<void> {
     return
   }
 
-  if (!normalizedArticles.value.length) {
-    if (token === commentsRequestToken) {
-      comments.value = []
-      commentsPending.value = false
-      commentsError.value = null
-    }
-    return
-  }
-
   commentsPending.value = true
   commentsError.value = null
 
   try {
-    const articleChunks = normalizedArticles.value.slice(0, 8)
-    const responses = await Promise.all(
-      articleChunks.map(async (article) => {
-        const page = await getArticleComments({
-          articleId: article.id,
-          pageNumber: 1,
-          pageSize: 5
-        })
-        return page.records.map((comment) => ({ article, comment }))
-      })
-    )
+    const page = await getArticleComments({
+      userId: profileUserId.value,
+      pageNumber: 1,
+      pageSize: 20
+    })
 
     if (token !== commentsRequestToken) return
 
-    const flattened = responses
-      .flat()
-      .sort(
-        (a, b) =>
-          new Date(b.comment.commentTime ?? '').getTime() -
-          new Date(a.comment.commentTime ?? '').getTime()
-      )
-
-    comments.value = flattened
+    // 将评论数据转换为 CommentEntry 格式
+    comments.value = page.records.map((comment) => ({
+      article: {
+        id: comment.articleId ?? 0,
+        title: `文章 #${comment.articleId ?? 0}`,
+        postTime: null,
+        views: null
+      },
+      comment
+    }))
   } catch (error) {
     if (token !== commentsRequestToken) return
     commentsError.value = error instanceof Error ? error : new Error('评论加载失败')
@@ -191,11 +169,9 @@ async function reloadComments(): Promise<void> {
 watch(
   () => ({
     own: isSelf.value,
-    pending: ownerArticlesPending.value,
-    key: normalizedArticles.value.map((item) => item.id).join(',')
+    userId: profileUserId.value
   }),
-  ({ pending }) => {
-    if (pending) return
+  () => {
     void reloadComments()
   },
   { immediate: true }
@@ -254,7 +230,7 @@ const tabItems = computed<UserTabItem[]>(() => {
     items.push(
       { label: '收藏夹', icon: 'i-lucide-heart', value: 'favorites' },
       {
-        label: '评论管理',
+        label: '我的评论',
         icon: 'i-lucide-message-circle',
         value: 'comments',
         badge: commentsCount ? commentsCount : undefined
@@ -285,16 +261,6 @@ watch(
   { immediate: true }
 )
 
-/**
- * 汇总页面各区域的加载状态，用于刷新按钮联动。
- */
-const _combinedRefreshing = computed(
-  () =>
-    userPending.value ||
-    ownerArticlesPending.value ||
-    (isSelf.value && (partitionsPending.value || commentsPending.value))
-)
-
 /** SEO 设置 */
 useSeo(
   computed<SeoData>(() => {
@@ -302,7 +268,6 @@ useSeo(
       return {
         title: '用户资料',
         description: '查看用户资料和发布的文章'
-        // type: 'profile'
       }
     }
 
@@ -312,7 +277,6 @@ useSeo(
       description:
         user.personalStatus || `${user.nickname || user.account} 的个人主页，查看发布的文章和动态`,
       keywords: `用户,${user.account},${user.nickname || ''},博客,文章`.trim(),
-      // type: 'profile',
       author: user.nickname || user.account
     }
   })
@@ -320,7 +284,7 @@ useSeo(
 </script>
 
 <template>
-  <div class="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-6 lg:px-0">
+  <div class="mx-auto max-w-7xl px-4 py-6 lg:px-0">
     <UAlert
       v-if="profileUserId === null"
       color="error"
@@ -332,58 +296,71 @@ useSeo(
     </UAlert>
 
     <template v-else>
-      <UserProfileOverview
-        :user="profileUserInfo"
-        :is-self="isSelf"
-        :loading="userPending"
-        :error-message="userErrorMessage"
-      />
-
-      <UTabs
-        v-if="tabItems.length"
-        v-model="activeTab"
-        :items="tabItems"
-        orientation="horizontal"
-        :unmount-on-hide="false"
-        variant="pill"
-        size="md"
-        class="w-full"
-      >
-        <template #content="{ item }">
-          <template v-if="item.value === 'articles'">
-            <div id="user-articles" class="space-y-6">
-              <UserArticleList v-if="profileUserId" :user-id="profileUserId" :page-size="8" />
-            </div>
-          </template>
-
-          <template v-else-if="item.value === 'favorites'">
-            <div v-if="isSelf && profileUserId" id="user-favorites" class="space-y-6">
-              <UserFavoritesPanel :user-id="profileUserId" />
-            </div>
-          </template>
-
-          <template v-else-if="item.value === 'comments'">
-            <UserCommentsPanel
-              :comments="comments"
-              :comments-pending="commentsPending"
-              :owner-articles-pending="ownerArticlesPending"
-              :owner-articles-error-message="ownerArticlesErrorMessage"
-              :comments-error="commentsError"
-              :normalized-article-count="normalizedArticles.length"
-              @refresh="() => reloadComments()"
+      <!-- 左右布局容器 -->
+      <div class="flex flex-col gap-6 lg:flex-row">
+        <!-- 左侧：用户信息卡片 -->
+        <aside class="w-full shrink-0 lg:w-80">
+          <div class="sticky top-20">
+            <UserProfileOverview
+              :user="profileUserInfo"
+              :is-self="isSelf"
+              :loading="userPending"
+              :error-message="userErrorMessage"
             />
-          </template>
+          </div>
+        </aside>
 
-          <template v-else-if="item.value === 'partitions'">
-            <UserPartitionsPanel
-              :partition-rows="partitionRows"
-              :partitions-pending="partitionsPending"
-              :partitions-error-message="partitionsErrorMessage"
-              @refresh="() => refreshPartitions()"
-            />
-          </template>
-        </template>
-      </UTabs>
+        <!-- 右侧：功能标签 -->
+        <main class="min-w-0 flex-1">
+          <UTabs
+            v-if="tabItems.length"
+            v-model="activeTab"
+            :items="tabItems"
+            orientation="horizontal"
+            :unmount-on-hide="false"
+            variant="pill"
+            size="md"
+            class="w-full"
+            :ui="{ list: 'shadow-lg bg-default mb-2' }"
+          >
+            <template #content="{ item }">
+              <div class="bg-default w-full rounded-lg p-4 shadow-lg">
+                <template v-if="item.value === 'articles'">
+                  <div id="user-articles" class="space-y-6">
+                    <UserArticleList v-if="profileUserId" :user-id="profileUserId" :page-size="8" />
+                  </div>
+                </template>
+
+                <template v-else-if="item.value === 'favorites'">
+                  <div v-if="isSelf && profileUserId" id="user-favorites" class="space-y-6">
+                    <UserFavoritesPanel :user-id="profileUserId" />
+                  </div>
+                </template>
+
+                <template v-else-if="item.value === 'comments'">
+                  <UserCommentsPanel
+                    :comments="comments"
+                    :comments-pending="commentsPending"
+                    :owner-articles-pending="ownerArticlesPending"
+                    :owner-articles-error-message="ownerArticlesErrorMessage"
+                    :comments-error="commentsError"
+                    @refresh="() => reloadComments()"
+                  />
+                </template>
+
+                <template v-else-if="item.value === 'partitions'">
+                  <UserPartitionsPanel
+                    :partition-rows="partitionRows"
+                    :partitions-pending="partitionsPending"
+                    :partitions-error-message="partitionsErrorMessage"
+                    @refresh="() => refreshPartitions()"
+                  />
+                </template>
+              </div>
+            </template>
+          </UTabs>
+        </main>
+      </div>
     </template>
   </div>
 </template>

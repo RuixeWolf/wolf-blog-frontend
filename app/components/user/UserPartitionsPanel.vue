@@ -41,6 +41,9 @@ const showCreateModal = ref(false)
 const showEditModal = ref(false)
 const showDeleteModal = ref(false)
 
+/** 创建子分区时的父分区 ID */
+const createParentId = ref<number | null>(null)
+
 /** 当前编辑和删除的分区 */
 const editPartition = ref<Article.Partition | null>(null)
 const deletePartition = ref<Article.Partition | null>(null)
@@ -54,8 +57,10 @@ function handleRefresh() {
 
 /**
  * 打开新建分区弹窗。
+ * @param {number | null} parentId 父分区 ID，为 null 时创建顶级分区。
  */
-function handleOpenCreateModal() {
+function handleOpenCreateModal(parentId: number | null = null) {
+  createParentId.value = parentId
   showCreateModal.value = true
 }
 
@@ -82,6 +87,7 @@ function handleOpenDeleteModal(partition: Article.Partition) {
  */
 function handleCloseCreateModal() {
   showCreateModal.value = false
+  createParentId.value = null
 }
 
 /**
@@ -215,6 +221,7 @@ function handleApiError(error: unknown, fallback: string) {
       :show-create-modal="showCreateModal"
       :show-edit-modal="showEditModal"
       :show-delete-modal="showDeleteModal"
+      :create-parent-id="createParentId"
       :edit-partition="editPartition"
       :delete-partition="deletePartition"
       @close-create-modal="handleCloseCreateModal"

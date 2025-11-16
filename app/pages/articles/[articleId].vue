@@ -13,6 +13,9 @@ const toast = useToast()
 const currentUser = useCurrentUser()
 const { isLoggedIn, userInfo } = storeToRefs(currentUser)
 
+/** 分区解析器 */
+const partitionResolver = usePartitionResolver()
+
 const articleId = computed(() => Number(route.params.articleId))
 const loginRedirectPath = computed(() => {
   const redirect = encodeURIComponent(route.fullPath)
@@ -33,7 +36,7 @@ const { y: windowScrollY } = useWindowScroll()
 
 /** 是否显示工具栏阴影 */
 const shouldShowShadow = computed(() => {
-  if (!import.meta.client) return true
+  if (!import.meta.client) return false
   return windowScrollY.value > 0
 })
 
@@ -194,16 +197,9 @@ const dropdownItems = computed(() => {
       onSelect: handleToggleLike
     },
     {
-      label: '收藏',
+      label: isFavorited.value ? `已收藏 (${favoriteFoldersCount.value})` : '收藏',
       icon: 'i-lucide-bookmark',
-      onSelect: () => {
-        // TODO: 实现收藏功能
-        toast.add({
-          title: '功能开发中',
-          description: '收藏功能即将上线',
-          color: 'info'
-        })
-      }
+      onSelect: handleFavoriteClick
     },
     {
       label: '分享',
@@ -270,6 +266,20 @@ if (import.meta.client) {
   )
 }
 
+/** 收藏相关 */
+const isFavoriteModalOpen = ref(false)
+
+const {
+  isFavorited,
+  favoriteFoldersCount,
+  loading: favoriteLoading,
+  mutationLoading: favoriteMutationLoading
+} = useArticleFavorite(articleId)
+
+/** 删除确认模态框 */
+const isDeleteModalOpen = ref(false)
+const isDeleting = ref(false)
+
 /** 点赞 */
 async function handleToggleLike() {
   if (!isLoggedIn.value) {
@@ -315,6 +325,21 @@ async function handleToggleLike() {
   }
 }
 
+/** 收藏按钮点击 */
+function handleFavoriteClick() {
+  if (!isLoggedIn.value) {
+    toast.add({
+      title: '请先登录',
+      description: '登录后才能收藏文章',
+      color: 'neutral'
+    })
+    redirectToLogin()
+    return
+  }
+
+  isFavoriteModalOpen.value = true
+}
+
 function goBack() {
   navigateTo('/')
 }
@@ -326,10 +351,14 @@ function retry() {
 /** 删除文章 */
 async function handleDeleteArticle() {
   if (!article.value) return
+  isDeleteModalOpen.value = true
+}
 
-  const confirmed = confirm('确定要删除这篇文章吗？此操作不可撤销。')
-  if (!confirmed) return
+/** 确认删除文章 */
+async function confirmDeleteArticle() {
+  if (!article.value) return
 
+  isDeleting.value = true
   try {
     await deleteArticle(article.value.id)
     toast.add({
@@ -337,6 +366,7 @@ async function handleDeleteArticle() {
       description: '文章已删除',
       color: 'success'
     })
+    isDeleteModalOpen.value = false
     // 删除成功后返回文章列表
     navigateTo('/')
   } catch (error) {
@@ -346,6 +376,8 @@ async function handleDeleteArticle() {
       description: '请稍后再试',
       color: 'error'
     })
+  } finally {
+    isDeleting.value = false
   }
 }
 
@@ -424,6 +456,17 @@ onUnmounted(() => {
     window.removeEventListener('scroll', handleScroll)
   }
 })
+
+// 当文章加载成功后，获取分区信息
+watch(
+  () => article.value,
+  (articleData) => {
+    if (articleData?.partitionId) {
+      void partitionResolver.fetchPartitions()
+    }
+  },
+  { immediate: true }
+)
 </script>
 
 <template>
@@ -482,7 +525,15 @@ onUnmounted(() => {
               >
                 {{ isLiked ? '已点赞' : '点赞' }}
               </UButton>
-              <UButton icon="i-lucide-bookmark" variant="outline" color="neutral">收藏</UButton>
+              <UButton
+                icon="i-lucide-bookmark"
+                :color="isFavorited ? 'primary' : 'neutral'"
+                :variant="isFavorited ? 'solid' : 'outline'"
+                :loading="favoriteLoading || favoriteMutationLoading"
+                @click="handleFavoriteClick"
+              >
+                {{ isFavorited ? `已收藏 (${favoriteFoldersCount})` : '收藏' }}
+              </UButton>
               <UButton
                 icon="i-lucide-share-2"
                 variant="outline"
@@ -551,7 +602,14 @@ onUnmounted(() => {
               >
                 <div class="flex items-center gap-2">
                   <UIcon name="i-lucide-calendar" class="h-4 w-4" />
-                  <span>{{ formatDateTime(article.postTime, 'YYYY-MM-DD HH:mm') }}</span>
+                  <span>发布于 {{ formatDateTime(article.postTime, 'YYYY-MM-DD HH:mm') }}</span>
+                </div>
+                <div
+                  v-if="article.editTime && article.editTime !== article.postTime"
+                  class="flex items-center gap-2"
+                >
+                  <UIcon name="i-lucide-clock" class="h-4 w-4" />
+                  <span>更新于 {{ formatDateTime(article.editTime, 'YYYY-MM-DD HH:mm') }}</span>
                 </div>
                 <div class="flex items-center gap-2">
                   <UIcon name="i-lucide-eye" class="h-4 w-4" />
@@ -563,9 +621,9 @@ onUnmounted(() => {
                     >作者: {{ article.author.nickname ?? article.author.account }}</ULink
                   >
                 </div>
-                <div class="flex items-center gap-2">
+                <div v-if="article.partitionId" class="flex items-center gap-2">
                   <UIcon name="i-lucide-folder" class="h-4 w-4" />
-                  <span>分区 ID: {{ article.partitionId }}</span>
+                  <span>{{ partitionResolver.resolvePartitionName(article.partitionId) }}</span>
                 </div>
               </div>
               <div v-if="article.tags?.length" class="flex flex-wrap gap-2">
@@ -614,6 +672,19 @@ onUnmounted(() => {
         />
       </div>
     </div>
+
+    <!-- 收藏夹选择弹窗 -->
+    <ArticleFavoriteFolderModal v-model:open="isFavoriteModalOpen" :article-id="articleId" />
+
+    <!-- 删除确认弹窗 -->
+    <DeleteConfirmModal
+      v-model:open="isDeleteModalOpen"
+      :item-name="article?.title || '此文章'"
+      title="删除文章"
+      message="确定要删除这篇文章吗？此操作不可撤销，文章内容将永久丢失。"
+      :loading="isDeleting"
+      @confirm="confirmDeleteArticle"
+    />
   </div>
 </template>
 

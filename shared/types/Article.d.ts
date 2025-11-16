@@ -12,6 +12,8 @@ declare namespace Article {
     views: number
     /** 文章发布时间 */
     postTime: string
+    /** 文章更新时间 */
+    editTime?: string
     /**
      * 可见性
      * - `0` - 公开

@@ -25,18 +25,9 @@ const props = defineProps<{
   ownerArticlesErrorMessage?: string | null
   /** 评论接口错误信息 */
   commentsError: Error | null
-  /** 已加载文章数量 */
-  normalizedArticleCount: number
 }>()
 
-const {
-  comments,
-  commentsPending,
-  ownerArticlesPending,
-  ownerArticlesErrorMessage,
-  commentsError,
-  normalizedArticleCount
-} = toRefs(props)
+const { comments, commentsPending, commentsError } = toRefs(props)
 
 const emit = defineEmits<{
   /** 请求重新加载评论 */
@@ -55,10 +46,8 @@ function handleRefresh() {
   <section id="user-comments" class="space-y-4">
     <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div>
-        <h3 class="text-lg font-semibold">评论管理</h3>
-        <p class="text-sm text-gray-500 dark:text-gray-400">
-          已加载 {{ normalizedArticleCount }} 篇文章的最新评论
-        </p>
+        <h3 class="text-lg font-semibold">我的评论</h3>
+        <p class="text-sm text-gray-500 dark:text-gray-400">共 {{ comments.length }} 条评论</p>
       </div>
       <div class="flex items-center gap-2">
         <UButton
@@ -73,25 +62,16 @@ function handleRefresh() {
       </div>
     </div>
 
-    <div v-if="ownerArticlesPending" class="space-y-3">
+    <div v-if="commentsPending" class="space-y-3">
       <USkeleton v-for="index in 3" :key="index" class="h-20 w-full" />
     </div>
-
-    <UAlert
-      v-else-if="ownerArticlesErrorMessage"
-      color="error"
-      variant="subtle"
-      icon="i-lucide-alert-circle"
-    >
-      {{ ownerArticlesErrorMessage }}
-    </UAlert>
 
     <UAlert v-else-if="commentsError" color="error" variant="subtle" icon="i-lucide-alert-circle">
       {{ commentsError.message }}
     </UAlert>
 
     <UAlert v-else-if="!comments.length" color="neutral" variant="subtle" icon="i-lucide-info">
-      暂无新的评论动态。
+      暂无评论记录。
     </UAlert>
 
     <div v-else class="space-y-4">

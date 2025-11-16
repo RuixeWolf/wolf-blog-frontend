@@ -5,6 +5,7 @@ import {
   deleteArticleComment,
   getArticleComments
 } from '@/apis/article/comment'
+import { getUsersBriefByIds } from '@/apis/user'
 
 /**
  * 文章评论组件的属性定义
@@ -37,6 +38,14 @@ const commentSectionEl = ref<HTMLElement | null>(null)
 const commentContent = ref('')
 const isSubmittingComment = ref(false)
 const deletingCommentId = ref<number | null>(null)
+
+/** 评论用户数据映射（userId -> UserBrief） */
+const commentUsers = ref<Map<number, User.UserBrief>>(new Map())
+const loadingUsers = ref(false)
+
+/** 删除评论确认弹窗 */
+const isDeleteCommentModalOpen = ref(false)
+const commentToDelete = ref<Article.Comment | null>(null)
 
 /**
  * 文章评论列表的异步数据状态
@@ -181,7 +190,7 @@ async function handleSubmitComment() {
  * 删除指定评论
  * @param {Article.Comment} comment 待删除的评论
  */
-async function handleDeleteComment(comment: Article.Comment) {
+function handleDeleteComment(comment: Article.Comment) {
   if (!isLoggedIn.value) {
     toast.add({
       title: '请先登录',
@@ -200,17 +209,30 @@ async function handleDeleteComment(comment: Article.Comment) {
     return
   }
 
-  if (deletingCommentId.value === comment.id) return
+  commentToDelete.value = comment
+  isDeleteCommentModalOpen.value = true
+}
 
+/**
+ * 确认删除评论
+ */
+async function confirmDeleteComment() {
+  if (!commentToDelete.value) return
+
+  const comment = commentToDelete.value
   deletingCommentId.value = comment.id
+
   try {
     await deleteArticleComment({
       articleId: props.articleId,
       commentId: comment.id
     })
     toast.add({
-      title: '评论已删除'
+      title: '评论已删除',
+      color: 'success'
     })
+    isDeleteCommentModalOpen.value = false
+    commentToDelete.value = null
     await refreshComments()
   } catch (error) {
     console.error('删除评论失败', error)
@@ -248,6 +270,54 @@ function formatDate(dateString: string) {
     minute: '2-digit'
   })
 }
+
+/**
+ * 批量获取评论用户信息
+ */
+async function fetchCommentUsers() {
+  if (!comments.value.length) {
+    commentUsers.value.clear()
+    return
+  }
+
+  // 提取所有独特的用户 ID
+  const userIds = [...new Set(comments.value.map((comment) => comment.userId))]
+
+  // 过滤掉已经加载过的用户
+  const uncachedUserIds = userIds.filter((id) => !commentUsers.value.has(id))
+
+  if (uncachedUserIds.length === 0) return
+
+  loadingUsers.value = true
+  try {
+    const users = await getUsersBriefByIds(uncachedUserIds)
+    users.forEach((user) => {
+      commentUsers.value.set(user.id, user)
+    })
+  } catch (error) {
+    console.error('获取评论用户信息失败', error)
+  } finally {
+    loadingUsers.value = false
+  }
+}
+
+/**
+ * 获取指定评论的用户信息
+ * @param {Article.Comment} comment 评论对象
+ * @returns {User.UserBrief | null}
+ */
+function getCommentUser(comment: Article.Comment): User.UserBrief | null {
+  return commentUsers.value.get(comment.userId) || null
+}
+
+// 当评论列表变化时，批量加载用户信息
+watch(
+  comments,
+  () => {
+    void fetchCommentUsers()
+  },
+  { immediate: true }
+)
 </script>
 
 <template>
@@ -338,10 +408,12 @@ function formatDate(dateString: string) {
         <UCard v-for="comment in comments" :key="comment.id" variant="outline" class="shadow-sm">
           <template #header>
             <div class="flex items-center justify-between">
-              <div class="flex flex-col">
-                <span class="font-semibold text-gray-900 dark:text-white">
-                  用户 {{ comment.userId }}
-                </span>
+              <div class="flex flex-col gap-1">
+                <UserPopoverCard v-if="getCommentUser(comment)" :user="getCommentUser(comment)!" />
+                <div v-else class="flex items-center gap-2">
+                  <UAvatar size="xs" />
+                  <span class="text-sm font-medium text-gray-500"> 用户 {{ comment.userId }} </span>
+                </div>
                 <span class="text-xs text-gray-500 dark:text-gray-400">
                   {{ formatDate(comment.commentTime) }}
                 </span>
@@ -366,5 +438,16 @@ function formatDate(dateString: string) {
         </UCard>
       </div>
     </div>
+
+    <!-- 删除评论确认弹窗 -->
+    <DeleteConfirmModal
+      v-if="commentToDelete"
+      v-model:open="isDeleteCommentModalOpen"
+      :item-name="`来自 ${getCommentUser(commentToDelete)?.nickname || getCommentUser(commentToDelete)?.account || '用户 ' + commentToDelete.userId} 的评论`"
+      title="删除评论"
+      message="确定要删除这条评论吗？此操作不可撤销。"
+      :loading="deletingCommentId === commentToDelete.id"
+      @confirm="confirmDeleteComment"
+    />
   </UCard>
 </template>

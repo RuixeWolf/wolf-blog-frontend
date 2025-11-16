@@ -25,6 +25,8 @@ const props = defineProps<{
   showEditModal: boolean
   /** 删除弹窗显示状态 */
   showDeleteModal: boolean
+  /** 创建子分区时的父分区 ID */
+  createParentId: number | null
   /** 当前编辑的分区 */
   editPartition: Article.Partition | null
   /** 当前删除的分区 */
@@ -39,6 +41,7 @@ const {
   showCreateModal,
   showEditModal,
   showDeleteModal,
+  createParentId,
   editPartition,
   deletePartition
 } = toRefs(props)
@@ -159,6 +162,7 @@ const filteredEditParentOptions = computed(() =>
 
 /**
  * 重置新建分区表单。
+ * @param {number | null} parentId 父分区 ID
  */
 function resetCreateForm(parentId: number | null = null) {
   createForm.name = ''
@@ -294,7 +298,7 @@ async function handleDeletePartition() {
 // 监听弹窗显示状态变化，初始化表单
 watch(showCreateModal, (newVal) => {
   if (newVal) {
-    resetCreateForm()
+    resetCreateForm(createParentId.value)
   }
 })
 
@@ -324,7 +328,11 @@ watch(deletePartition, (newPartition) => {
     <UModal
       v-model:open="showCreateModal"
       title="新建分区"
-      description="填写分区基础信息，包括名称、可见性和父分区。"
+      :description="
+        createForm.parentId
+          ? `在分区“${partitionRows.find((r) => r.partition.id === createForm.parentId)?.partition.name}”下创建子分区`
+          : '填写分区基础信息，包括名称、可见性和父分区。'
+      "
     >
       <template #body>
         <div class="space-y-4">

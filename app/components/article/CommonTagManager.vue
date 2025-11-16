@@ -76,6 +76,10 @@ const tagActionState = reactive({
   deleting: {} as Record<number, boolean>
 })
 
+/** 删除确认模态框 */
+const deleteModalOpen = ref(false)
+const tagToDelete = ref<{ id: number; name: string } | null>(null)
+
 /** 当前选中的常用标签 ID 列表（去除 null/undefined）。 */
 const selectedTagIds = computed(() => Array.from(props.modelValue ?? []))
 /** 快速判断标签是否被选中的集合。 */
@@ -242,22 +246,35 @@ async function updateCommonTag(tagId: number) {
  * @returns {Promise<void>}
  */
 async function deleteCommonTag(tagId: number) {
-  if (!confirm('确定要删除该常用标签吗？')) {
-    return
-  }
+  const tag = commonTags.value?.find((t) => t.id === tagId)
+  if (!tag) return
 
+  tagToDelete.value = { id: tagId, name: tag.name }
+  deleteModalOpen.value = true
+}
+
+/**
+ * 确认删除常用标签。
+ * @returns {Promise<void>}
+ */
+async function confirmDeleteTag() {
+  if (!tagToDelete.value) return
+
+  const tagId = tagToDelete.value.id
   tagActionState.deleting[tagId] = true
   try {
     await deleteTags({ ids: [tagId] })
     toast.add({
       title: '删除成功',
-      description: `已删除常用标签 #${tagId}`,
+      description: `已删除常用标签「${tagToDelete.value.name}」`,
       color: 'success'
     })
     if (selectedTagIds.value.includes(tagId)) {
       setCommonTagSelected(tagId, false)
     }
     await refreshCommonTags()
+    deleteModalOpen.value = false
+    tagToDelete.value = null
   } catch (error) {
     handleApiError(error, '删除常用标签失败')
   } finally {
@@ -398,4 +415,13 @@ function isDeletingTag(tagId: number) {
       </div>
     </template>
   </UCollapsible>
+
+  <!-- 删除确认弹窗 -->
+  <DeleteConfirmModal
+    v-model:open="deleteModalOpen"
+    :item-name="tagToDelete?.name || '此标签'"
+    title="删除常用标签"
+    :loading="tagToDelete ? isDeletingTag(tagToDelete.id) : false"
+    @confirm="confirmDeleteTag"
+  />
 </template>

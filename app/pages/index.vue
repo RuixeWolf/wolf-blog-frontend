@@ -61,6 +61,9 @@ const dateRange = computed({
   }
 })
 
+/** 移动端高级筛选弹窗 */
+const isAdvancedFilterModalOpen = ref(false)
+
 /** 搜索防抖处理 */
 function handleSearch() {
   if (searchTimeout.value) {
@@ -164,115 +167,216 @@ function goToNewArticle() {
 </script>
 
 <template>
-  <div class="max-w-7xl py-6">
-    <div class="flex flex-row gap-4">
+  <div class="max-w-7xl py-4 sm:px-6 sm:py-6 lg:px-8">
+    <div class="flex flex-row gap-0 lg:gap-4">
       <!-- 文章列表内容 -->
-      <div class="grow">
+      <div class="min-w-0 grow">
         <!-- 文章列表页头 -->
-        <div class="mb-6 flex w-full flex-row gap-2">
-          <!-- 搜索框 -->
-          <UInput
-            v-model="searchQuery"
-            placeholder="搜索文章标题..."
-            leading-icon="i-lucide-search"
-            size="xl"
-            class="bg-default grow rounded-md shadow-lg"
-            variant="none"
-          />
-          <!-- 排序选择器 -->
-          <USelect
-            v-model="selectedSort"
-            :items="sortOptions"
-            option-text="label"
-            value-attribute="value"
-            placeholder="排序"
-            icon="i-lucide-arrow-up-down"
-            size="xl"
-            class="hover:bg-accented/75 bg-default shrink-0 shadow-lg"
-            variant="none"
-          />
-          <!-- 高级筛选 -->
-          <UPopover>
+        <div class="mb-6 w-full space-y-2">
+          <!-- 第一行：搜索框和快捷操作 -->
+          <div class="flex w-full flex-row gap-2">
+            <!-- 搜索框 -->
+            <UInput
+              v-model="searchQuery"
+              placeholder="搜索文章标题..."
+              leading-icon="i-lucide-search"
+              size="xl"
+              class="bg-default min-w-0 grow rounded-md shadow-lg"
+              variant="none"
+            />
+            <!-- 高级筛选按钮（移动端） -->
             <UButton
               icon="i-lucide-filter"
               size="xl"
-              trailing-icon="i-lucide-chevron-down"
-              class="hover:bg-accented/75 bg-default shrink-0 shadow-lg"
+              class="bg-default shrink-0 shadow-lg md:hidden"
               variant="soft"
               color="neutral"
+              @click="isAdvancedFilterModalOpen = true"
             />
-            <template #content>
-              <div class="bg-default w-80 rounded-lg p-4 max-lg:right-auto lg:max-w-80">
-                <div class="mb-3 flex items-center justify-between">
-                  <h3 class="text-sm font-medium text-gray-900 dark:text-white">高级筛选</h3>
-                  <UButton icon="i-lucide-filter-x" variant="ghost" size="xs" @click="clearFilters">
-                    清除
-                  </UButton>
+            <!-- 刷新按钮 -->
+            <UButton
+              icon="i-lucide-refresh-cw"
+              size="xl"
+              class="bg-default shrink-0 shadow-lg"
+              variant="soft"
+              color="neutral"
+              @click="handleRefresh"
+            />
+          </div>
+
+          <!-- 第二行：筛选器（仅桌面端显示） -->
+          <div class="hidden w-full flex-row gap-2 md:flex">
+            <!-- 作者ID -->
+            <UInput
+              v-model.number="query.authorId"
+              type="number"
+              placeholder="作者 ID"
+              size="xl"
+              :min="1"
+              class="bg-default w-32 shrink-0 rounded-md shadow-lg"
+              variant="none"
+            />
+            <!-- 分区ID -->
+            <UInput
+              v-model.number="query.partitionId"
+              type="number"
+              placeholder="分区 ID"
+              size="xl"
+              :min="1"
+              class="bg-default w-32 shrink-0 rounded-md shadow-lg"
+              variant="none"
+            />
+            <!-- 排序选择器 -->
+            <USelect
+              v-model="selectedSort"
+              :items="sortOptions"
+              option-text="label"
+              value-attribute="value"
+              placeholder="排序"
+              icon="i-lucide-arrow-up-down"
+              size="xl"
+              class="hover:bg-accented/75 bg-default shrink-0 shadow-lg"
+              variant="none"
+            />
+            <!-- 时间范围筛选 -->
+            <UPopover>
+              <UButton
+                icon="i-lucide-calendar-range"
+                size="xl"
+                trailing-icon="i-lucide-chevron-down"
+                class="hover:bg-accented/75 bg-default shrink-0 shadow-lg"
+                variant="soft"
+                color="neutral"
+              >
+                时间范围
+              </UButton>
+              <template #content>
+                <div class="bg-default w-80 rounded-lg p-4">
+                  <div class="mb-3 flex items-center justify-between">
+                    <h3 class="text-sm font-medium text-gray-900 dark:text-white">发布时间范围</h3>
+                    <UButton
+                      icon="i-lucide-x"
+                      variant="ghost"
+                      size="xs"
+                      @click="
+                        () => {
+                          dateRange = {}
+                        }
+                      "
+                    >
+                      清除
+                    </UButton>
+                  </div>
+
+                  <UCalendar v-model="dateRange" range size="sm" color="primary" class="w-full" />
                 </div>
+              </template>
+            </UPopover>
 
-                <div class="space-y-3">
-                  <!-- 用户和分区筛选 -->
-                  <div class="grid grid-cols-2 gap-3">
-                    <UInput
-                      v-model.number="query.authorId"
-                      type="number"
-                      placeholder="作者ID"
-                      size="sm"
-                      :min="1"
-                    />
-                    <UInput
-                      v-model.number="query.partitionId"
-                      type="number"
-                      placeholder="分区ID"
-                      size="sm"
-                      :min="1"
-                    />
-                  </div>
+            <!-- 分页大小 -->
+            <USelect
+              v-model="query.pageSize"
+              :items="[
+                { label: '10', value: 10 },
+                { label: '20', value: 20 },
+                { label: '50', value: 50 }
+              ]"
+              option-attribute="label"
+              value-attribute="value"
+              size="xl"
+              class="hover:bg-accented/75 bg-default shrink-0 shadow-lg"
+              variant="none"
+            >
+              <template #default="{ modelValue }">
+                每页 <span class="text-primary">{{ modelValue }}</span> 条
+              </template>
+            </USelect>
+          </div>
+        </div>
 
-                  <!-- 日期范围筛选 -->
-                  <div class="space-y-2">
-                    <label class="text-xs font-medium text-gray-700 dark:text-gray-300">
-                      发布时间范围
-                    </label>
-                    <UCalendar v-model="dateRange" range size="sm" color="primary" class="w-full" />
-                  </div>
+        <!-- 移动端高级筛选弹窗 -->
+        <UModal v-model:open="isAdvancedFilterModalOpen" title="高级筛选">
+          <template #body>
+            <div class="space-y-4">
+              <!-- 排序选择 -->
+              <div class="space-y-2">
+                <label class="text-sm font-medium text-gray-700 dark:text-gray-300">排序方式</label>
+                <USelect
+                  v-model="selectedSort"
+                  :items="sortOptions"
+                  option-text="label"
+                  value-attribute="value"
+                  placeholder="排序"
+                  icon="i-lucide-arrow-up-down"
+                  size="lg"
+                  class="w-full"
+                  variant="outline"
+                />
+              </div>
+
+              <!-- 作者和分区筛选 -->
+              <div class="grid grid-cols-2 gap-3">
+                <div class="space-y-2">
+                  <label class="text-sm font-medium text-gray-700 dark:text-gray-300">作者ID</label>
+                  <UInput
+                    v-model.number="query.authorId"
+                    type="number"
+                    placeholder="作者ID"
+                    size="lg"
+                    :min="1"
+                  />
+                </div>
+                <div class="space-y-2">
+                  <label class="text-sm font-medium text-gray-700 dark:text-gray-300">分区ID</label>
+                  <UInput
+                    v-model.number="query.partitionId"
+                    type="number"
+                    placeholder="分区ID"
+                    size="lg"
+                    :min="1"
+                  />
                 </div>
               </div>
-            </template>
-          </UPopover>
 
-          <!-- 分页大小 -->
-          <USelect
-            v-model="query.pageSize"
-            :items="[
-              { label: '10', value: 10 },
-              { label: '20', value: 20 },
-              { label: '50', value: 50 }
-            ]"
-            option-attribute="label"
-            value-attribute="value"
-            size="xl"
-            class="hover:bg-accented/75 bg-default shrink-0 shadow-lg"
-            variant="none"
-          >
-            <template #default="{ modelValue }">
-              每页 <span class="text-primary">{{ modelValue }}</span> 条
-            </template>
-          </USelect>
-          <!-- 刷新 -->
-          <UButton
-            icon="i-lucide-refresh-cw"
-            size="xl"
-            class="bg-default shrink-0 shadow-lg"
-            variant="soft"
-            color="neutral"
-            @click="handleRefresh"
-          />
-        </div>
+              <!-- 日期范围筛选 -->
+              <div class="space-y-2">
+                <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  发布时间范围
+                </label>
+                <UCalendar v-model="dateRange" range size="sm" color="primary" class="w-full" />
+              </div>
+
+              <!-- 分页大小 -->
+              <div class="space-y-2">
+                <label class="text-sm font-medium text-gray-700 dark:text-gray-300">每页条数</label>
+                <USelect
+                  v-model="query.pageSize"
+                  :items="[
+                    { label: '10 条', value: 10 },
+                    { label: '20 条', value: 20 },
+                    { label: '50 条', value: 50 }
+                  ]"
+                  option-attribute="label"
+                  value-attribute="value"
+                  size="lg"
+                  class="w-full"
+                  variant="outline"
+                />
+              </div>
+            </div>
+          </template>
+
+          <template #footer>
+            <div class="flex justify-end gap-2">
+              <UButton variant="outline" color="neutral" @click="clearFilters">清除筛选</UButton>
+              <UButton color="primary" @click="isAdvancedFilterModalOpen = false">确定</UButton>
+            </div>
+          </template>
+        </UModal>
 
         <!-- 加载状态骨架屏 -->
         <div v-if="pending" class="space-y-4">
-          <div v-for="i in Math.min(query.pageSize || 20, 5)" :key="i" class="p-4">
+          <div v-for="i in Math.min(query.pageSize || 20, 5)" :key="i" class="p-2 sm:p-4">
             <UCard class="p-4">
               <!-- 文章标题骨架 -->
               <USkeleton class="mb-3 h-6 w-3/4" />
@@ -332,7 +436,7 @@ function goToNewArticle() {
           <div
             v-for="article in articleList.records"
             :key="article.id"
-            class="bg-default rounded-lg p-4 shadow-lg transition-shadow duration-200 hover:shadow-xl"
+            class="bg-default rounded-lg p-3 shadow-lg transition-shadow duration-200 hover:shadow-xl sm:p-4"
           >
             <div>
               <NuxtLink :to="`/articles/${article.id}`" class="group block">
@@ -345,7 +449,9 @@ function goToNewArticle() {
                 >
                   {{ article.primary }}
                 </div>
-                <div class="mt-2 flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
+                <div
+                  class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-gray-500 dark:text-gray-400"
+                >
                   <div class="flex items-center gap-1">
                     <UIcon name="i-lucide-user" class="h-4 w-4" />
                     <span
@@ -366,6 +472,26 @@ function goToNewArticle() {
                     <UIcon name="i-lucide-thumbs-up" class="h-4 w-4" />
                     <span>{{ article.likeCount }}</span>
                   </div>
+                </div>
+                <!-- 标签显示（如果文章包含标签） -->
+                <div
+                  v-if="
+                    'tags' in article &&
+                    article.tags &&
+                    Array.isArray(article.tags) &&
+                    article.tags.length > 0
+                  "
+                  class="mt-3 flex flex-wrap gap-2"
+                >
+                  <UBadge
+                    v-for="(tag, index) in article.tags"
+                    :key="index"
+                    variant="soft"
+                    color="primary"
+                    size="sm"
+                  >
+                    {{ tag }}
+                  </UBadge>
                 </div>
               </NuxtLink>
             </div>

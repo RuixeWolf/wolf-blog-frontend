@@ -23,11 +23,6 @@ const infoItems = computed(() => {
       icon: 'i-lucide-at-sign'
     },
     {
-      label: '个性签名',
-      value: props.user.personalStatus || '这个用户很神秘，什么都没留下',
-      icon: 'i-lucide-quote'
-    },
-    {
       label: '邮箱',
       value: props.user.email || '未公开',
       icon: 'i-lucide-mail'
@@ -54,35 +49,27 @@ const infoItems = computed(() => {
  * 当缺失头像时使用用户名首字母作为占位。
  */
 const avatarFallback = computed(() => props.user?.username?.charAt(0)?.toUpperCase() ?? 'U')
+
+/**
+ * 移动端详细信息默认折叠状态
+ */
+const detailsOpen = ref(false)
 </script>
 
 <template>
-  <UCard class="overflow-hidden">
-    <template #header>
-      <div class="flex flex-col items-start gap-4 md:flex-row md:items-center md:justify-between">
-        <div class="flex items-center gap-4">
-          <UAvatar
-            size="lg"
-            :src="user?.avatar ?? undefined"
-            :alt="user?.username ?? '用户头像'"
-            :text="user ? undefined : avatarFallback"
-          />
-          <div>
-            <h2 class="text-xl font-semibold">{{ user?.username ?? '用户信息加载中' }}</h2>
-            <p class="text-sm text-gray-500 dark:text-gray-400">
-              {{ isSelf ? '这是你的个人主页' : 'Ta 的公开信息' }}
-            </p>
-          </div>
-        </div>
-      </div>
-    </template>
-
+  <UCard class="h-full overflow-hidden shadow-lg ring-0">
     <template #default>
       <div v-if="loading" class="space-y-4">
-        <USkeleton class="h-6 w-2/3" />
-        <USkeleton class="h-6 w-1/2" />
-        <USkeleton class="h-6 w-full" />
-        <USkeleton class="h-6 w-3/4" />
+        <div class="flex flex-col items-center">
+          <USkeleton class="h-24 w-24 rounded-full" />
+          <USkeleton class="mt-4 h-6 w-32" />
+          <USkeleton class="mt-2 h-4 w-24" />
+        </div>
+        <div class="space-y-3">
+          <USkeleton class="h-12 w-full" />
+          <USkeleton class="h-12 w-full" />
+          <USkeleton class="h-12 w-full" />
+        </div>
       </div>
       <div
         v-else-if="errorMessage"
@@ -90,22 +77,92 @@ const avatarFallback = computed(() => props.user?.username?.charAt(0)?.toUpperCa
       >
         <p class="text-sm text-amber-700 dark:text-amber-200">{{ errorMessage }}</p>
       </div>
-      <div v-else-if="user" class="grid gap-4 sm:grid-cols-2">
-        <div
-          v-for="item in infoItems"
-          :key="item.label"
-          class="flex items-start gap-3 rounded-lg border border-gray-100 p-3 shadow-sm dark:border-gray-800"
-        >
-          <UIcon :name="item.icon" class="text-primary-500 mt-1 text-lg" />
-          <div>
-            <div class="text-xs tracking-wide text-gray-500 uppercase dark:text-gray-400">
-              {{ item.label }}
-            </div>
-            <div class="mt-1 text-sm text-gray-900 dark:text-gray-100">
-              {{ item.value }}
+      <div v-else-if="user" class="space-y-6">
+        <!-- 头像和基本信息 -->
+        <div class="flex flex-col items-center text-center">
+          <UAvatar
+            size="2xl"
+            :src="user?.avatar ?? undefined"
+            :alt="user?.username ?? '用户头像'"
+            :text="avatarFallback"
+            class="ring-4 ring-gray-100 dark:ring-gray-800"
+          />
+          <h2 class="mt-4 text-xl font-bold text-gray-900 dark:text-white">
+            {{ user.username }}
+          </h2>
+          <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            {{ props.user?.personalStatus }}
+          </p>
+          <p
+            v-if="user.personalStatus"
+            class="mt-3 text-sm text-gray-600 italic dark:text-gray-300"
+          >
+            "{{ user.personalStatus }}"
+          </p>
+        </div>
+
+        <USeparator />
+
+        <!-- 详细信息列表 - 桌面端直接显示，移动端可折叠 -->
+        <!-- 桌面端 (lg+) 直接显示 -->
+        <div class="hidden space-y-2 lg:block">
+          <div
+            v-for="item in infoItems"
+            :key="item.label"
+            class="flex items-center gap-2.5 px-1 py-1.5"
+          >
+            <UIcon :name="item.icon" class="h-4 w-4 shrink-0 text-gray-400 dark:text-gray-500" />
+            <div class="min-w-0 flex-1">
+              <div class="flex items-baseline gap-2">
+                <div class="w-14 text-xs text-gray-500 dark:text-gray-400">{{ item.label }}</div>
+                <span class="truncate text-sm text-gray-900 dark:text-gray-100">{{
+                  item.value
+                }}</span>
+              </div>
             </div>
           </div>
         </div>
+
+        <!-- 移动端 (< lg) 可折叠 -->
+        <UCollapsible v-model:open="detailsOpen" class="flex flex-col gap-2 lg:hidden">
+          <UButton
+            class="group"
+            label="个人信息"
+            color="neutral"
+            variant="ghost"
+            trailing-icon="i-lucide-chevron-down"
+            :ui="{
+              trailingIcon: 'group-data-[state=open]:rotate-180 transition-transform duration-200'
+            }"
+            size="sm"
+            block
+          />
+
+          <template #content>
+            <div class="space-y-2">
+              <div
+                v-for="item in infoItems"
+                :key="item.label"
+                class="flex items-center gap-2.5 px-1 py-1.5"
+              >
+                <UIcon
+                  :name="item.icon"
+                  class="h-4 w-4 shrink-0 text-gray-400 dark:text-gray-500"
+                />
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-baseline gap-2">
+                    <div class="w-14 text-xs text-gray-500 dark:text-gray-400">
+                      {{ item.label }}
+                    </div>
+                    <span class="truncate text-sm text-gray-900 dark:text-gray-100">{{
+                      item.value
+                    }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </template>
+        </UCollapsible>
       </div>
       <div v-else class="text-center text-sm text-gray-500 dark:text-gray-400">暂无该用户信息</div>
     </template>

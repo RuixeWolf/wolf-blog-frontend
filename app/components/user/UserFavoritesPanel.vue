@@ -39,6 +39,16 @@ const editForm = reactive({
   isDefault: false
 })
 
+/**
+ * 原始编辑表单数据，用于对比变化。
+ */
+const originalEditForm = reactive({
+  id: 0,
+  title: '',
+  visibility: 0 as 0 | 1,
+  isDefault: false
+})
+
 const expandedFavorites = ref<number[]>([])
 
 interface FavoriteArticlesState {
@@ -71,6 +81,10 @@ function resetEditForm() {
   editForm.title = ''
   editForm.visibility = 0
   editForm.isDefault = false
+  originalEditForm.id = 0
+  originalEditForm.title = ''
+  originalEditForm.visibility = 0
+  originalEditForm.isDefault = false
 }
 
 /**
@@ -183,6 +197,11 @@ function openEditModal(favorite: Favorite.FavoriteFolder) {
   editForm.title = favorite.title
   editForm.visibility = favorite.visibility as 0 | 1
   editForm.isDefault = favorite.isDefault === 1
+  // 保存原始值用于对比
+  originalEditForm.id = favorite.id
+  originalEditForm.title = favorite.title
+  originalEditForm.visibility = favorite.visibility as 0 | 1
+  originalEditForm.isDefault = favorite.isDefault === 1
   showEditModal.value = true
 }
 
@@ -221,12 +240,28 @@ async function handleEditFavorite() {
     toast.add({ title: '收藏夹名称不能为空', color: 'warning' })
     return
   }
+
+  // 对比变化，只发送修改过的字段
+  const trimmedTitle = editForm.title.trim()
+  const hasChanges =
+    trimmedTitle !== originalEditForm.title ||
+    editForm.visibility !== originalEditForm.visibility ||
+    editForm.isDefault !== originalEditForm.isDefault
+
+  if (!hasChanges) {
+    toast.add({ title: '没有修改任何内容', color: 'neutral' })
+    showEditModal.value = false
+    return
+  }
+
   try {
     const updated = await patchFavoriteFolder({
       id: editForm.id,
-      title: editForm.title.trim(),
-      visibility: editForm.visibility,
-      isDefault: editForm.isDefault ? 1 : 0
+      title: trimmedTitle !== originalEditForm.title ? trimmedTitle : undefined,
+      visibility:
+        editForm.visibility !== originalEditForm.visibility ? editForm.visibility : undefined,
+      isDefault:
+        editForm.isDefault !== originalEditForm.isDefault ? (editForm.isDefault ? 1 : 0) : undefined
     })
     favorites.value = favorites.value.map((fav) => (fav.id === updated.id ? updated : fav))
     toast.add({ title: '收藏夹更新成功', color: 'success' })

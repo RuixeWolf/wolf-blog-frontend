@@ -80,7 +80,7 @@ export default defineNuxtConfig({
     defaults: {
       changefreq: 'daily',
       priority: 1,
-      lastmod: new Date()
+      lastmod: new Date().toISOString()
     },
     urls: async () => {
       const articleList = await ofetch<ApiResponse<ApiPageData<Article.ArticleInfo>>>(
@@ -94,12 +94,12 @@ export default defineNuxtConfig({
           }
         }
       )
-      return (
+      const urls =
         articleList?.data?.records?.map((article: Article.ArticleInfo) => ({
           loc: `/articles/${article.id}`,
-          lastmod: new Date(article.editTime || article.postTime)
+          lastmod: new Date(article.editTime || article.postTime).toISOString()
         })) || []
-      )
+      return urls
     }
   }
 })

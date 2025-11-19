@@ -32,14 +32,6 @@ const lastScrollY = ref(0)
 const isToolbarVisible = ref(true)
 const scrollThreshold = 50 // 滚动阈值，滚动超过此距离才触发隐藏/显示
 
-const { y: windowScrollY } = useWindowScroll()
-
-/** 是否显示工具栏阴影 */
-const shouldShowShadow = computed(() => {
-  if (!import.meta.client) return false
-  return windowScrollY.value > 0
-})
-
 /**
  * 尝试复用通过 Vue Router 导航状态携带的文章详情。
  * 如果缓存的数据属于当前路由，会立刻从 history state 中移除，避免后续页面再次复用。
@@ -479,8 +471,7 @@ watch(
     >
       <UContainer>
         <div
-          class="flex items-center justify-between rounded-lg border border-gray-200 bg-white/80 px-4 py-3 backdrop-blur dark:border-gray-800 dark:bg-gray-900/80"
-          :class="{ 'shadow-lg': shouldShowShadow }"
+          class="flex items-center justify-between rounded-lg bg-white/80 px-4 py-3 shadow-lg backdrop-blur dark:border-gray-800 dark:bg-gray-900/80"
         >
           <!-- 左侧：返回按钮 -->
           <div class="flex items-center">
@@ -591,7 +582,7 @@ watch(
       </div>
 
       <div v-else-if="article" class="space-y-8">
-        <UCard>
+        <UCard class="shadow-lg ring-0">
           <template #header>
             <div class="space-y-4">
               <h1 class="text-3xl leading-tight font-bold text-gray-900 dark:text-white">

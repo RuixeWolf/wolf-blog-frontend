@@ -39,6 +39,11 @@ const commentContent = ref('')
 const isSubmittingComment = ref(false)
 const deletingCommentId = ref<number | null>(null)
 
+/** 回复相关状态 */
+const replyingToId = ref<number | null>(null)
+const replyContent = ref('')
+const isSubmittingReply = ref(false)
+
 /** 评论用户数据映射（userId -> UserBrief） */
 const commentUsers = ref<Map<number, User.UserBrief>>(new Map())
 const loadingUsers = ref(false)
@@ -46,6 +51,22 @@ const loadingUsers = ref(false)
 /** 删除评论确认弹窗 */
 const isDeleteCommentModalOpen = ref(false)
 const commentToDelete = ref<Article.Comment | null>(null)
+
+/** 展开的评论 ID 集合 */
+const expandedComments = ref(new Set<number>())
+
+/**
+ * 切换评论回复的展开/收起状态
+ */
+function toggleReplies(commentId: number) {
+  const newSet = new Set(expandedComments.value)
+  if (newSet.has(commentId)) {
+    newSet.delete(commentId)
+  } else {
+    newSet.add(commentId)
+  }
+  expandedComments.value = newSet
+}
 
 /**
  * 文章评论列表的异步数据状态
@@ -76,6 +97,58 @@ const comments = computed<Article.CommentList>(() => commentPagination.value?.re
  * 评论总数，优先使用接口返回的总行数，兼容无分页字段的情况
  */
 const commentCount = computed(() => commentPagination.value?.totalRow ?? comments.value.length)
+
+/**
+ * 评论 ID 映射，用于快速查找
+ */
+const commentMap = computed(() => {
+  const map = new Map<number, Article.Comment>()
+  comments.value.forEach((c) => map.set(c.id, c))
+  return map
+})
+
+/**
+ * 构建树状结构的评论列表（仅一层嵌套）
+ * 根评论包含所有子孙评论作为 children
+ */
+const threadedComments = computed(() => {
+  const roots: (Article.Comment & { children: Article.Comment[] })[] = []
+  const childMap = new Map<number, Article.Comment[]>()
+
+  // 1. 找出所有根评论（无父评论或父评论不在当前列表中）
+  // 2. 建立父子关系映射
+  comments.value.forEach((comment) => {
+    if (comment.replyId && commentMap.value.has(comment.replyId)) {
+      const parentId = comment.replyId
+      if (!childMap.has(parentId)) {
+        childMap.set(parentId, [])
+      }
+      childMap.get(parentId)!.push(comment)
+    } else {
+      // 视为根评论
+      roots.push({ ...comment, children: [] })
+    }
+  })
+
+  // 3. 递归收集所有后代到根评论的 children 中（扁平化）
+  const collectDescendants = (parentId: number): Article.Comment[] => {
+    const children = childMap.get(parentId) || []
+    let descendants = [...children]
+    children.forEach((child) => {
+      descendants = descendants.concat(collectDescendants(child.id))
+    })
+    return descendants
+  }
+
+  roots.forEach((root) => {
+    root.children = collectDescendants(root.id).sort((a, b) => {
+      return new Date(a.commentTime).getTime() - new Date(b.commentTime).getTime()
+    })
+  })
+
+  return roots
+})
+
 /**
  * 评论接口的错误消息
  */
@@ -110,6 +183,78 @@ function canManageComment(comment: Article.Comment): boolean {
   if (!userInfo.value) return false
   if (userInfo.value.id === comment.userId) return true
   return isArticleAuthor.value
+}
+
+/**
+ * 初始化回复
+ */
+function initiateReply(comment: Article.Comment) {
+  if (!isLoggedIn.value) {
+    toast.add({
+      title: '请先登录',
+      description: '登录后才能回复评论',
+      color: 'neutral'
+    })
+    redirectToLogin()
+    return
+  }
+  replyingToId.value = comment.id
+  replyContent.value = ''
+}
+
+/**
+ * 取消回复
+ */
+function cancelReply() {
+  replyingToId.value = null
+  replyContent.value = ''
+}
+
+/**
+ * 提交回复
+ */
+async function submitReply() {
+  if (!replyingToId.value || !replyContent.value.trim()) return
+
+  if (isSubmittingReply.value) return
+  isSubmittingReply.value = true
+
+  try {
+    await createArticleComment({
+      articleId: props.articleId,
+      content: replyContent.value.trim(),
+      replyId: replyingToId.value
+    })
+    toast.add({
+      title: '回复成功',
+      color: 'success'
+    })
+    cancelReply()
+    await refreshComments()
+
+    // 如果回复的是根评论，自动展开该评论的回复列表
+    if (replyingToId.value && commentMap.value.has(replyingToId.value)) {
+      const repliedComment = commentMap.value.get(replyingToId.value)
+      // 如果回复的是根评论（没有 replyId），则展开它
+      // 如果回复的是子评论（有 replyId），则展开它的父评论（根评论）
+      const rootId = repliedComment?.replyId || replyingToId.value
+      if (rootId) {
+        const newSet = new Set(expandedComments.value)
+        newSet.add(rootId)
+        expandedComments.value = newSet
+      }
+    }
+  } catch (error) {
+    console.error('回复评论失败', error)
+    const description = error instanceof ApiError ? error.message : '请稍后再试'
+    toast.add({
+      title: '回复失败',
+      description,
+      color: 'error'
+    })
+  } finally {
+    isSubmittingReply.value = false
+  }
 }
 
 /**
@@ -310,6 +455,16 @@ function getCommentUser(comment: Article.Comment): User.UserBrief | null {
   return commentUsers.value.get(comment.userId) || null
 }
 
+/**
+ * 获取被回复的评论的用户信息
+ */
+function getRepliedUser(comment: Article.Comment): User.UserBrief | null {
+  if (!comment.replyId) return null
+  const parentComment = commentMap.value.get(comment.replyId)
+  if (!parentComment) return null
+  return getCommentUser(parentComment)
+}
+
 // 当评论列表变化时，批量加载用户信息
 watch(
   comments,
@@ -321,7 +476,7 @@ watch(
 </script>
 
 <template>
-  <UCard ref="commentSectionEl">
+  <UCard ref="commentSectionEl" class="shadow-lg ring-0">
     <template #header>
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-2">
@@ -404,38 +559,201 @@ watch(
       >
         暂无评论，快来抢沙发吧～
       </div>
-      <div v-else class="space-y-4">
-        <UCard v-for="comment in comments" :key="comment.id" variant="outline" class="shadow-sm">
-          <template #header>
-            <div class="flex items-center justify-between">
-              <div class="flex flex-col gap-1">
-                <UserPopoverCard v-if="getCommentUser(comment)" :user="getCommentUser(comment)!" />
-                <div v-else class="flex items-center gap-2">
-                  <UAvatar size="xs" />
-                  <span class="text-sm font-medium text-gray-500"> 用户 {{ comment.userId }} </span>
+      <div v-else class="space-y-6">
+        <div v-for="comment in threadedComments" :key="comment.id" class="space-y-3">
+          <!-- 根评论 -->
+          <UCard variant="outline" class="shadow-sm">
+            <template #header>
+              <div class="flex items-center justify-between">
+                <div class="flex flex-col gap-1">
+                  <UserPopoverCard
+                    v-if="getCommentUser(comment)"
+                    :user="getCommentUser(comment)!"
+                  />
+                  <div v-else class="flex items-center gap-2">
+                    <UAvatar size="xs" />
+                    <span class="text-sm font-medium text-gray-500">
+                      用户 {{ comment.userId }}
+                    </span>
+                  </div>
+                  <span class="text-xs text-gray-500 dark:text-gray-400">
+                    {{ formatDate(comment.commentTime) }}
+                  </span>
                 </div>
-                <span class="text-xs text-gray-500 dark:text-gray-400">
-                  {{ formatDate(comment.commentTime) }}
-                </span>
+                <div class="flex items-center gap-2">
+                  <UButton
+                    v-if="isLoggedIn"
+                    size="xs"
+                    variant="ghost"
+                    color="primary"
+                    icon="i-lucide-reply"
+                    @click="initiateReply(comment)"
+                  >
+                    回复
+                  </UButton>
+                  <UButton
+                    v-if="canManageComment(comment)"
+                    icon="i-lucide-trash-2"
+                    size="xs"
+                    variant="ghost"
+                    color="neutral"
+                    :loading="deletingCommentId === comment.id"
+                    @click="handleDeleteComment(comment)"
+                  >
+                    删除
+                  </UButton>
+                </div>
               </div>
+            </template>
+
+            <p class="text-sm leading-relaxed whitespace-pre-line text-gray-700 dark:text-gray-300">
+              {{ comment.content }}
+            </p>
+
+            <!-- 回复输入框 -->
+            <div v-if="replyingToId === comment.id" class="mt-4 w-full space-y-2">
+              <UTextarea
+                v-model="replyContent"
+                class="w-full"
+                :rows="3"
+                autofocus
+                placeholder="写下你的回复..."
+                :disabled="isSubmittingReply"
+              />
+              <div class="flex justify-end gap-2">
+                <UButton size="sm" color="neutral" variant="ghost" @click="cancelReply"
+                  >取消</UButton
+                >
+                <UButton
+                  size="sm"
+                  color="primary"
+                  :loading="isSubmittingReply"
+                  :disabled="!replyContent.trim()"
+                  @click="submitReply"
+                >
+                  回复
+                </UButton>
+              </div>
+            </div>
+
+            <!-- 展开/收起回复按钮 -->
+            <div v-if="comment.children.length > 0" class="mt-3 flex">
               <UButton
-                v-if="canManageComment(comment)"
-                icon="i-lucide-trash-2"
-                size="xs"
                 variant="ghost"
+                size="xs"
                 color="neutral"
-                :loading="deletingCommentId === comment.id"
-                @click="handleDeleteComment(comment)"
+                class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                :icon="
+                  expandedComments.has(comment.id) ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'
+                "
+                @click="toggleReplies(comment.id)"
               >
-                删除
+                {{
+                  expandedComments.has(comment.id)
+                    ? '收起回复'
+                    : `查看 ${comment.children.length} 条回复`
+                }}
               </UButton>
             </div>
-          </template>
+          </UCard>
 
-          <p class="text-sm leading-relaxed whitespace-pre-line text-gray-700 dark:text-gray-300">
-            {{ comment.content }}
-          </p>
-        </UCard>
+          <!-- 子评论列表 -->
+          <div
+            v-if="comment.children.length > 0 && expandedComments.has(comment.id)"
+            class="ml-6 space-y-3 border-l-2 border-gray-100 pl-4 dark:border-gray-800"
+          >
+            <UCard
+              v-for="reply in comment.children"
+              :key="reply.id"
+              class="bg-gray-50/50 dark:bg-gray-900/50"
+            >
+              <template #header>
+                <div class="flex items-center justify-between">
+                  <div class="flex flex-col gap-1">
+                    <div class="flex flex-wrap items-center gap-2">
+                      <UserPopoverCard
+                        v-if="getCommentUser(reply)"
+                        :user="getCommentUser(reply)!"
+                      />
+                      <div v-else class="flex items-center gap-2">
+                        <UAvatar size="xs" />
+                        <span class="text-sm font-medium text-gray-500">
+                          用户 {{ reply.userId }}
+                        </span>
+                      </div>
+
+                      <!-- 显示回复对象 -->
+                      <template v-if="getRepliedUser(reply) && reply.replyId !== comment.id">
+                        <span class="text-xs text-gray-400">回复</span>
+                        <span class="text-sm font-medium text-gray-600 dark:text-gray-300">
+                          @{{ getRepliedUser(reply)?.nickname || getRepliedUser(reply)?.account }}
+                        </span>
+                      </template>
+                    </div>
+                    <span class="text-xs text-gray-500 dark:text-gray-400">
+                      {{ formatDate(reply.commentTime) }}
+                    </span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <UButton
+                      v-if="isLoggedIn"
+                      size="xs"
+                      variant="ghost"
+                      color="primary"
+                      icon="i-lucide-reply"
+                      @click="initiateReply(reply)"
+                    >
+                      回复
+                    </UButton>
+                    <UButton
+                      v-if="canManageComment(reply)"
+                      icon="i-lucide-trash-2"
+                      size="xs"
+                      variant="ghost"
+                      color="neutral"
+                      :loading="deletingCommentId === reply.id"
+                      @click="handleDeleteComment(reply)"
+                    >
+                      删除
+                    </UButton>
+                  </div>
+                </div>
+              </template>
+
+              <p
+                class="text-sm leading-relaxed whitespace-pre-line text-gray-700 dark:text-gray-300"
+              >
+                {{ reply.content }}
+              </p>
+
+              <!-- 子评论回复输入框 -->
+              <div v-if="replyingToId === reply.id" class="mt-4 w-full space-y-2">
+                <UTextarea
+                  v-model="replyContent"
+                  class="w-full"
+                  :rows="3"
+                  autofocus
+                  :placeholder="`回复 @${getCommentUser(reply)?.nickname || '用户'}`"
+                  :disabled="isSubmittingReply"
+                />
+                <div class="flex justify-end gap-2">
+                  <UButton size="sm" color="neutral" variant="ghost" @click="cancelReply"
+                    >取消</UButton
+                  >
+                  <UButton
+                    size="sm"
+                    color="primary"
+                    :loading="isSubmittingReply"
+                    :disabled="!replyContent.trim()"
+                    @click="submitReply"
+                  >
+                    回复
+                  </UButton>
+                </div>
+              </div>
+            </UCard>
+          </div>
+        </div>
       </div>
     </div>
 

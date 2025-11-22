@@ -207,90 +207,101 @@ function goToNewArticle() {
           <!-- 第二行：筛选器（仅桌面端显示） -->
           <div class="hidden w-full flex-row gap-2 md:flex">
             <!-- 作者ID -->
-            <UInput
-              v-model.number="query.authorId"
-              type="number"
-              placeholder="作者 ID"
-              size="xl"
-              :min="1"
-              class="bg-default w-32 shrink-0 rounded-md shadow-lg"
-              variant="none"
-            />
-            <!-- 分区ID -->
-            <UInput
-              v-model.number="query.partitionId"
-              type="number"
-              placeholder="分区 ID"
-              size="xl"
-              :min="1"
-              class="bg-default w-32 shrink-0 rounded-md shadow-lg"
-              variant="none"
-            />
-            <!-- 排序选择器 -->
-            <USelect
-              v-model="selectedSort"
-              :items="sortOptions"
-              option-text="label"
-              value-attribute="value"
-              placeholder="排序"
-              icon="i-lucide-arrow-up-down"
-              size="xl"
-              class="hover:bg-accented/75 bg-default shrink-0 shadow-lg"
-              variant="none"
-            />
-            <!-- 时间范围筛选 -->
-            <UPopover>
-              <UButton
-                icon="i-lucide-calendar-range"
+            <div class="shrink-0 grow rounded-md shadow-lg">
+              <UInput
+                v-model.number="query.authorId"
+                type="number"
+                placeholder="作者 ID"
                 size="xl"
-                trailing-icon="i-lucide-chevron-down"
-                class="hover:bg-accented/75 bg-default shrink-0 shadow-lg"
-                variant="soft"
-                color="neutral"
-              >
-                时间范围
-              </UButton>
-              <template #content>
-                <div class="bg-default w-80 rounded-lg p-4">
-                  <div class="mb-3 flex items-center justify-between">
-                    <h3 class="text-sm font-medium text-gray-900 dark:text-white">发布时间范围</h3>
-                    <UButton
-                      icon="i-lucide-x"
-                      variant="ghost"
-                      size="xs"
-                      @click="
-                        () => {
-                          dateRange = {}
-                        }
-                      "
-                    >
-                      清除
-                    </UButton>
+                :min="1"
+                class="bg-default w-full rounded-md"
+                variant="none"
+              />
+            </div>
+            <!-- 分区ID -->
+            <div class="shrink-0 grow rounded-md shadow-lg">
+              <UInput
+                v-model.number="query.partitionId"
+                type="number"
+                placeholder="分区 ID"
+                size="xl"
+                :min="1"
+                class="bg-default w-full rounded-md"
+                variant="none"
+              />
+            </div>
+            <!-- 排序选择器 -->
+            <div class="shrink-0 grow">
+              <USelect
+                v-model="selectedSort"
+                :items="sortOptions"
+                option-text="label"
+                value-attribute="value"
+                placeholder="排序"
+                icon="i-lucide-arrow-up-down"
+                size="xl"
+                class="hover:bg-accented/75 bg-default w-full shadow-lg"
+                variant="none"
+              />
+            </div>
+            <!-- 时间范围筛选 -->
+            <div class="shrink-0 grow">
+              <UPopover class="w-full">
+                <UButton
+                  icon="i-lucide-calendar-range"
+                  size="xl"
+                  trailing-icon="i-lucide-chevron-down"
+                  class="hover:bg-accented/75 bg-default w-full shadow-lg"
+                  variant="soft"
+                  color="neutral"
+                >
+                  时间范围
+                </UButton>
+                <template #content>
+                  <div class="bg-default w-80 rounded-lg p-4">
+                    <div class="mb-3 flex items-center justify-between">
+                      <h3 class="text-sm font-medium text-gray-900 dark:text-white">
+                        发布时间范围
+                      </h3>
+                      <UButton
+                        icon="i-lucide-x"
+                        variant="ghost"
+                        size="xs"
+                        @click="
+                          () => {
+                            dateRange = {}
+                          }
+                        "
+                      >
+                        清除
+                      </UButton>
+                    </div>
+
+                    <UCalendar v-model="dateRange" range size="sm" color="primary" class="w-full" />
                   </div>
-
-                  <UCalendar v-model="dateRange" range size="sm" color="primary" class="w-full" />
-                </div>
-              </template>
-            </UPopover>
-
+                </template>
+              </UPopover>
+            </div>
             <!-- 分页大小 -->
-            <USelect
-              v-model="query.pageSize"
-              :items="[
-                { label: '10', value: 10 },
-                { label: '20', value: 20 },
-                { label: '50', value: 50 }
-              ]"
-              option-attribute="label"
-              value-attribute="value"
-              size="xl"
-              class="hover:bg-accented/75 bg-default shrink-0 shadow-lg"
-              variant="none"
-            >
-              <template #default="{ modelValue }">
-                每页 <span class="text-primary">{{ modelValue }}</span> 条
-              </template>
-            </USelect>
+            <div class="shrink-0 grow">
+              <USelect
+                v-model="query.pageSize"
+                :items="[
+                  { label: '10', value: 10 },
+                  { label: '20', value: 20 },
+                  { label: '50', value: 50 }
+                ]"
+                option-attribute="label"
+                value-attribute="value"
+                size="xl"
+                class="hover:bg-accented/75 bg-default w-full shadow-lg"
+                variant="none"
+              >
+                <template #default="{ modelValue }">
+                  每页 <span class="text-primary">{{ modelValue }}</span> 条
+                </template>
+              </USelect>
+            </div>
           </div>
         </div>
 
@@ -375,42 +386,46 @@ function goToNewArticle() {
         </UModal>
 
         <!-- 加载状态骨架屏 -->
-        <div v-if="pending" class="space-y-4">
-          <div v-for="i in Math.min(query.pageSize || 20, 5)" :key="i" class="p-2 sm:p-4">
-            <UCard class="p-4">
-              <!-- 文章标题骨架 -->
-              <USkeleton class="mb-3 h-6 w-3/4" />
+        <div v-if="pending" class="space-y-3">
+          <div
+            v-for="i in Math.min(query.pageSize || 20, 5)"
+            :key="i"
+            class="bg-default rounded-lg p-3 shadow-lg sm:p-4"
+          >
+            <!-- 文章标题骨架 -->
+            <USkeleton class="h-7 w-3/4" />
 
-              <!-- 文章摘要骨架 -->
-              <div class="mb-4 space-y-2">
-                <USkeleton class="h-4 w-full" />
-                <USkeleton class="h-4 w-5/6" />
-              </div>
+            <!-- 文章摘要骨架 -->
+            <div class="mt-2 space-y-2">
+              <USkeleton class="h-5 w-full" />
+              <USkeleton class="h-5 w-5/6" />
+            </div>
 
-              <!-- 文章信息骨架 -->
-              <div class="flex items-center gap-4">
-                <div class="flex items-center gap-1">
-                  <USkeleton class="h-4 w-4 rounded" />
-                  <USkeleton class="h-4 w-16" />
-                </div>
-                <div class="flex items-center gap-1">
-                  <USkeleton class="h-4 w-4 rounded" />
-                  <USkeleton class="h-4 w-24" />
-                </div>
-                <div class="flex items-center gap-1">
-                  <USkeleton class="h-4 w-4 rounded" />
-                  <USkeleton class="h-4 w-12" />
-                </div>
-                <div class="flex items-center gap-1">
-                  <USkeleton class="h-4 w-4 rounded" />
-                  <USkeleton class="h-4 w-10" />
-                </div>
-                <div class="flex items-center gap-1">
-                  <USkeleton class="h-4 w-4 rounded" />
-                  <USkeleton class="h-4 w-8" />
-                </div>
+            <!-- 文章信息骨架 -->
+            <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+              <div class="flex items-center gap-1">
+                <USkeleton class="h-4 w-4 rounded-full" />
+                <USkeleton class="h-4 w-20" />
               </div>
-            </UCard>
+              <div class="flex items-center gap-1">
+                <USkeleton class="h-4 w-4 rounded-full" />
+                <USkeleton class="h-4 w-32" />
+              </div>
+              <div class="flex items-center gap-1">
+                <USkeleton class="h-4 w-4 rounded-full" />
+                <USkeleton class="h-4 w-12" />
+              </div>
+              <div class="flex items-center gap-1">
+                <USkeleton class="h-4 w-4 rounded-full" />
+                <USkeleton class="h-4 w-12" />
+              </div>
+            </div>
+
+            <!-- 标签骨架 -->
+            <div class="mt-3 flex gap-2">
+              <USkeleton class="h-5 w-12 rounded" />
+              <USkeleton class="h-5 w-16 rounded" />
+            </div>
           </div>
         </div>
 

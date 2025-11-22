@@ -91,13 +91,10 @@ const detailsOpen = ref(false)
             {{ user.username }}
           </h2>
           <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            {{ props.user?.personalStatus }}
+            {{ props.user?.account }}
           </p>
-          <p
-            v-if="user.personalStatus"
-            class="mt-3 text-sm text-gray-600 italic dark:text-gray-300"
-          >
-            "{{ user.personalStatus }}"
+          <p v-if="user.personalStatus" class="mt-3 text-sm text-gray-600 dark:text-gray-300">
+            {{ user.personalStatus }}
           </p>
         </div>
 

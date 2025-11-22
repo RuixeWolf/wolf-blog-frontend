@@ -10,16 +10,16 @@ const centerNavigationMenu = computed<NavigationMenuItem[]>(() => [
     label: '首页',
     to: '/',
     icon: 'lucide:file-text'
+  },
+  {
+    label: '关于',
+    to: '/about',
+    icon: 'lucide:info'
   }
 ])
 
 /** 右侧用户菜单配置 */
 const rightNavigationMenu = computed<NavigationMenuItem[]>(() => [
-  {
-    label: '关于',
-    to: '/about',
-    icon: 'lucide:info'
-  },
   ...(currentUser.isLoggedIn
     ? [
         {
@@ -89,59 +89,60 @@ const mobileMenuItems = computed<NavigationMenuItem[]>(() => [
 
     <!-- 右侧：关于按钮、颜色模式选择器、用户菜单 -->
     <template #right>
-      <UColorModeSelect variant="ghost" class="hidden lg:flex" />
-      <UNavigationMenu
-        :items="rightNavigationMenu"
-        content-orientation="vertical"
-        class="hidden lg:flex"
-      >
-        <!-- 用户下拉菜单 -->
-        <template #user-content>
-          <div>
-            <UUser
-              :name="currentUser.userInfo?.username"
-              :description="currentUser.userInfo?.account"
-              :avatar="{
-                src: currentUser.userInfo?.avatar ?? undefined,
-                alt: currentUser.userInfo?.username
-              }"
-              size="lg"
-              class="p-4"
-            />
-            <USeparator orientation="horizontal" />
-            <div class="py-2">
-              <UButton
-                variant="ghost"
-                color="neutral"
-                icon="i-lucide-user"
-                class="w-full justify-start px-4 py-2"
-                :to="`/user/${currentUser.userInfo?.id}`"
-              >
-                个人资料
-              </UButton>
-              <UButton
-                variant="ghost"
-                color="neutral"
-                icon="i-lucide-settings"
-                class="w-full justify-start px-4 py-2"
-                to="/user/settings"
-              >
-                设置
-              </UButton>
-              <USeparator orientation="horizontal" class="my-2" />
-              <UButton
-                variant="ghost"
-                color="error"
-                icon="i-lucide-log-out"
-                class="w-full justify-start px-4 py-2"
-                @click="handleLogout()"
-              >
-                退出登录
-              </UButton>
+      <div class="hidden lg:flex">
+        <UNavigationMenu
+          :items="rightNavigationMenu"
+          content-orientation="vertical"
+          class="w-full min-w-60 justify-end"
+        >
+          <!-- 用户下拉菜单 -->
+          <template #user-content>
+            <div>
+              <UUser
+                :name="currentUser.userInfo?.username"
+                :description="currentUser.userInfo?.account"
+                :avatar="{
+                  src: currentUser.userInfo?.avatar ?? undefined,
+                  alt: currentUser.userInfo?.username
+                }"
+                size="lg"
+                class="p-4"
+              />
+              <USeparator orientation="horizontal" />
+              <div class="py-2">
+                <UButton
+                  variant="ghost"
+                  color="neutral"
+                  icon="i-lucide-user"
+                  class="w-full justify-start px-4 py-2"
+                  :to="`/user/${currentUser.userInfo?.id}`"
+                >
+                  个人资料
+                </UButton>
+                <UButton
+                  variant="ghost"
+                  color="neutral"
+                  icon="i-lucide-settings"
+                  class="w-full justify-start px-4 py-2"
+                  to="/user/settings"
+                >
+                  设置
+                </UButton>
+                <USeparator orientation="horizontal" class="my-2" />
+                <UButton
+                  variant="ghost"
+                  color="error"
+                  icon="i-lucide-log-out"
+                  class="w-full justify-start px-4 py-2"
+                  @click="handleLogout()"
+                >
+                  退出登录
+                </UButton>
+              </div>
             </div>
-          </div>
-        </template>
-      </UNavigationMenu>
+          </template>
+        </UNavigationMenu>
+      </div>
     </template>
 
     <!-- 移动端菜单主体 -->

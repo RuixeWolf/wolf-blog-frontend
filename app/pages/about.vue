@@ -25,7 +25,9 @@ useSeo({
 <template>
   <div class="flex h-full flex-row gap-10 py-10">
     <!-- 左侧导航侧边栏 -->
-    <div class="bg-accented flex h-full w-60 flex-col gap-4 rounded-2xl px-2 py-20 shadow-xl">
+    <div
+      class="bg-accented flex h-full w-60 shrink-0 flex-col gap-4 rounded-2xl px-2 py-20 shadow-xl"
+    >
       <NuxtLink
         v-for="item in SIDEBAR_NAVIGATION_ITEMS"
         :key="item.path"

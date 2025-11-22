@@ -43,6 +43,10 @@ export async function getUserInfo(userId?: User.UserInfo['id']): Promise<User.Us
     method: 'GET'
   })
   if (!response.success) throw new ApiError(response)
+  // 如果头像 URL 不以 http:// 或 https:// 开头，则补全为完整 URL
+  if (response.data.avatar && !/^https?:\/\//.test(response.data.avatar)) {
+    response.data.avatar = `https://${response.data.avatar}`
+  }
   return response.data
 }
 
@@ -62,6 +66,10 @@ export async function updateUserProfile(data: User.UpdateProfileRequest): Promis
     body
   })
   if (!response.success) throw new ApiError(response)
+  // 如果头像 URL 不以 http:// 或 https:// 开头，则补全为完整 URL
+  if (response.data.avatar && !/^https?:\/\//.test(response.data.avatar)) {
+    response.data.avatar = `https://${response.data.avatar}`
+  }
   return response.data
 }
 
@@ -167,4 +175,17 @@ export async function sendEmailRegisterCode(
   })
   if (!response.success) throw new ApiError(response)
   return response.data
+}
+
+/** 上传用户头像 */
+export async function uploadAvatar(file: File): Promise<void> {
+  const { $api } = useNuxtApp()
+  const formData = new FormData()
+  formData.append('avatar', file)
+
+  const response = await $api<ApiResponse<void>>('/user/avatar', {
+    method: 'POST',
+    body: formData
+  })
+  if (!response.success) throw new ApiError(response)
 }

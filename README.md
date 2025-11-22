@@ -6,6 +6,9 @@
 
 [访问 Wolf Blog - 狼屋博客](https://wolfblog.cn)
 
+- **前端仓库**: [RuixeWolf/wolf-blog-frontend](https://github.com/RuixeWolf/wolf-blog-frontend)
+- **后端仓库**: [RylinWolf/WolfHouseBlog](https://github.com/RylinWolf/WolfHouseBlog)
+
 ## 技术栈
 
 - **框架**: Nuxt 4 (Vue 3)
@@ -186,7 +189,7 @@ pnpm format
 
 ### 开发设置
 
-1. 克隆仓库：`git clone https://github.com/your-username/wolf-blog-frontend.git`
+1. 克隆仓库：`git clone https://github.com/RuixeWolf/wolf-blog-frontend.git`
 2. 安装依赖：`pnpm install`
 3. 启动开发服务器：`pnpm dev`
 
